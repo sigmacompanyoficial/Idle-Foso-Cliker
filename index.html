@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
@@ -54,7 +54,7 @@
       position: fixed; top: 20px; left: 20px; z-index: 10;
       background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
       padding: 16px; border-radius: 12px; border: 1px solid rgba(100, 116, 139, 0.3);
-      width: 300px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      width: 360px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
   }
   .stats-grid {
       display: grid;
@@ -687,6 +687,19 @@
             </div>
         </div>
 
+        <!-- Selector Rápido de Fosos -->
+        <div id="fosoSelector" style="margin-top: 15px; text-align: center;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <button id="prevFosoBtn" class="mini-btn ghost" style="padding: 8px 12px;">&lt;</button>
+                <div style="flex-grow: 1;">
+                    <div id="currentFosoName" style="font-weight: bold; font-size: 14px;">Foso 1</div>
+                    <div id="currentFosoStats" class="metaTiny">1 ΣC / clic</div>
+                </div>
+                <button id="nextFosoBtn" class="mini-btn ghost" style="padding: 8px 12px;">&gt;</button>
+            </div>
+        </div>
+
+
           <!-- Barra de Combo -->
           <div id="comboContainer" class="hidden" style="width: 100%; text-align: center; margin-top: 15px;">
               <div id="comboText" style="font-weight: bold; color: #ffc107; font-size: 16px;"></div>
@@ -718,14 +731,16 @@
               <div class="metaTiny" style="color:var(--muted,#9fb2c8)">Clicks: <span id="panelClicks">0</span></div>
             </div>
 
-            <table aria-live="polite" role="table">
-              <thead>
-                <tr><th>Jugador</th><th style="text-align:center">Clics</th><th style="text-align:center">ΣC</th></tr>
-              </thead>
-              <tbody id="rankingTable">
-                <tr id="rankingEmptyRow"><td colspan="3" id="rankingEmpty">Cargando ranking…</td></tr>
-              </tbody>
-            </table>
+            <div class="ranking-table-container">
+              <table aria-live="polite" role="table">
+                <thead>
+                  <tr><th>Jugador</th><th style="text-align:center">Clics</th><th style="text-align:center">Rebirths</th><th style="text-align:center">Fosos</th><th style="text-align:center">ΣC</th></tr>
+                </thead>
+                <tbody id="rankingTable">
+                  <tr id="rankingEmptyRow"><td colspan="3" id="rankingEmpty">Cargando ranking…</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <div style="margin-top:12px; display:flex; gap:8px;">
               <button id="btnToggleSave" class="mini-btn ghost" title="Activar/Desactivar guardado automático">Auto-save: ON</button>
@@ -757,6 +772,7 @@
     border-radius: 10px;
     padding: 12px;
     color: #e7eef6;
+    display: flex; flex-direction: column; /* Para que el scroll funcione */
     font-family: Inter, system-ui, Arial;
     font-size: 14px;
   }
@@ -779,14 +795,25 @@
     transform: translateY(10px);
     animation: fadeInRow 0.5s ease forwards;
   }
-  #rankingPanel table { width:100%; border-collapse:collapse; }
+  #rankingPanel table { width:100%; border-collapse:collapse; table-layout: fixed; }
   #rankingPanel thead th { text-align:left; color: rgba(230,240,255,0.7); font-weight:700; padding:6px 6px 8px 0; font-size:12px; }
+  #rankingPanel thead th:nth-child(1) { width: 40%; } /* Jugador */
+  #rankingPanel thead th:nth-child(2) { width: 25%; } /* Clics */
+  #rankingPanel thead th:nth-child(3) { width: 12%; } /* Rebirths */
+  #rankingPanel thead th:nth-child(4) { width: 11%; } /* Fosos */
+  #rankingPanel thead th:nth-child(5) { width: 12%; } /* ΣC */
   #rankingPanel tbody td { padding:6px 6px; border-bottom: 1px solid rgba(100,116,139,0.08); font-size:13px; color:#dfeeff; }
   #rankingControls { display:flex; gap:8px; margin:10px 0 8px 0; align-items:center; }
   #playerNameInput { flex:1; padding:6px 8px; border-radius:8px; border:1px solid rgba(100,116,139,0.2); background:rgba(0,0,0,0.12); color:inherit; }
   .mini-btn { padding:6px 8px; border-radius:8px; border:none; cursor:pointer; font-weight:700; background: linear-gradient(90deg,#16a34a,#10b981); color:#04101a; }
   .mini-btn.ghost { background: rgba(255,255,255,0.03); color:var(--muted,#aab4c4); border:1px solid rgba(100,116,139,0.12); }
   #rankingEmpty { color: var(--muted,#8aa0b8); font-size:13px; padding:6px 0; }
+  /* Contenedor para la tabla con scroll */
+  .ranking-table-container {
+    max-height: 200px; /* Altura máxima antes de que aparezca el scroll */
+    overflow-y: auto;
+    margin-top: 8px;
+  }
   #registerPrompt { font-size: 11px; color: #f59e0b; text-align: center; padding: 4px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; margin-bottom: 6px; display: none; }
   @keyframes fadeInRow {
     to {
@@ -860,18 +887,31 @@
   let autoSaveTimer = null;
 
   // Guarda los datos del jugador en Realtime DB
-  function savePlayerData(nombre, clicks, dinero, isAutoSave = false) {
+  function savePlayerData(nombre, clicks, dinero, rebirths, fososOwned, isAutoSave = false) {
     if (!db) return;
     const savedName = localStorage.getItem('playerName');
     if (!savedName && isAutoSave) return; // No auto-guardar si no hay nombre registrado
-    const key = sanitizeKey(savedName || localPlayerId);
+    const key = sanitizeKey(nombre || localPlayerId);
     set(ref(db, 'players/' + key), {
       name: nombre,
+      rebirths: Number(rebirths) || 0,
+      fososOwned: Number(fososOwned) || 0,
       clicks: Number(clicks) || 0,
       dinero: Number(dinero) || 0,
       updatedAt: Date.now()
     }).catch(err => console.error("savePlayerData error:", err));
   }
+// Convierte textos como "123K", "2.5M", "1.2B" a número real
+function parseSigmaText(text) {
+  if (!text) return 0;
+  text = text.toString().trim().replace(/,/g, ""); // quitar comas
+  const match = text.match(/^([\d,.+-]+)\s*([KMBTQ]?)/i);
+  if (!match) return parseFloat(text) || 0;
+  const num = parseFloat(match[1]) || 0;
+  const suffix = match[2].toUpperCase();
+  const mult = { K: 1e3, M: 1e6, B: 1e9, T: 1e12, Q: 1e15 }[suffix] || 1;
+  return num * mult;
+}
 
   // Cargar ranking (suscripción en tiempo real)
   function loadRankingRealtime() {
@@ -901,6 +941,8 @@
         key: k,
         name: v?.name ?? k,
         clicks: Number(v?.clicks ?? 0),
+        rebirths: Number(v?.rebirths ?? 0),
+        fososOwned: Number(v?.fososOwned ?? 0),
         dinero: Number(v?.dinero ?? 0),
         updatedAt: v?.updatedAt ?? 0
       };
@@ -913,36 +955,40 @@
       return;
     }
 
-    // Limitar filas al Top 15
-    const top15 = players.slice(0, 15);
+    // Limitar filas al Top 50
+    const topPlayers = players.slice(0, 50);
     const currentPlayerName = localStorage.getItem('playerName') || localPlayerId;
-    let isPlayerInTop15 = false;
+    let isPlayerInTop = false;
 
-    top15.forEach((p, i) => {
+    topPlayers.forEach((p, i) => {
       const tr = document.createElement("tr");
       tr.style.animationDelay = `${i * 0.05}s`;
       if (p.name === currentPlayerName) {
         tr.classList.add('currentUser');
-        isPlayerInTop15 = true;
+        isPlayerInTop = true;
       }
       tr.innerHTML = `
-        <td style="padding-left:6px">${escapeHtml(p.name)}</td>
+        <td style="padding-left:6px">${i + 1}. ${escapeHtml(p.name)}</td>
         <td style="text-align:center">${p.clicks.toLocaleString()}</td>
+        <td style="text-align:center">${p.rebirths}</td>
+        <td style="text-align:center">${p.fososOwned}</td>
         <td style="text-align:center">${formatNum(p.dinero)}</td>
       `;
       rankingTable.appendChild(tr);
     });
 
-    // Si el jugador no está en el top 15, buscarlo y añadirlo al final
-    if (!isPlayerInTop15) {
+    // Si el jugador no está en el top, buscarlo y añadirlo al final
+    if (!isPlayerInTop) {
         const playerIndex = players.findIndex(p => p.name === currentPlayerName);
         if (playerIndex > -1) {
             const player = players[playerIndex];
             const tr = document.createElement("tr");
             tr.className = 'currentUser';
             tr.innerHTML = `
-                <td style="padding-left:6px">${playerIndex + 1}. ${escapeHtml(player.name)}</td>
+                <td style="padding-left:6px" title="Tu posición actual">${playerIndex + 1}. ${escapeHtml(player.name)}</td>
                 <td style="text-align:center">${player.clicks.toLocaleString()}</td>
+                <td style="text-align:center">${player.rebirths}</td>
+                <td style="text-align:center">${player.fososOwned}</td>
                 <td style="text-align:center">${formatNum(player.dinero)}</td>
             `;
             rankingTable.appendChild(tr);
@@ -964,36 +1010,50 @@
 
   // Formatear números grandes con sufijos (k, M, B, T...)
   function formatNum(n) {
-      if (n < 1e3) return n.toString();
-      const suffixes = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
-      const i = Math.floor(Math.log10(n) / 3);
-      const num = (n / Math.pow(10, i * 3));
-      // Evitar decimales si el número es entero (ej: 1.00k -> 1k)
-      // Mostrar 1 o 2 decimales si los tiene.
-      if (num % 1 === 0) {
-          return num.toFixed(0) + suffixes[i];
-      } else if (num < 10) {
-          return num.toFixed(2) + suffixes[i];
-      }
-      return num.toFixed(1) + suffixes[i];
+    if (isNaN(n) || n === null) return "0";
+    if (n === 0) return "0";
+    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+    const i = Math.floor(Math.log10(Math.abs(n)) / 3);
+    if (i === 0) {
+        // Para números menores de 1000, simplemente los formateamos con comas.
+        return Math.floor(n).toLocaleString();
+    }
+    const num = (n / Math.pow(10, i * 3));
+    // Formato con 1 decimal para números menores a 1000 del siguiente sufijo, y 2 para los menores de 10.
+    const precision = num < 10 ? 2 : (num < 1000 ? 1 : 0);
+    // Usamos replace para quitar los .0 y .00 innecesarios.
+    return num.toFixed(precision).replace(/\.0+$/, "") + suffixes[i];
   }
 
   // Actualiza los valores del panel desde tu UI del juego si existen
-  function refreshPanelFromGameUI() {
-    const clicks = totalClicksEl ? (Number(totalClicksEl.innerText) || 0) : 0;
-    const dinero = sigTotalEl ? (parseFloat(sigTotalEl.textContent.replace(/[^0-9.]/g, '')) || 0) : 0; // Usar el estado real
-    panelClicks.innerText = clicks.toLocaleString();
-    panelSigma.innerText = dinero.toLocaleString();
-  }
+function refreshPanelFromGameUI() {
+    // Leer directamente del estado del juego, que es más fiable que el DOM.
+    if (window.state) {
+        const clicks = window.state.totalClicks || 0;
+        const dinero = window.state.sig || 0;
+
+        // Mostrar valores sin formato, número completo
+        panelClicks.innerText = clicks.toLocaleString();
+        panelSigma.innerText = Math.floor(dinero).toLocaleString();
+
+        // Para depurar
+        console.log("Actualizando panel — Clicks:", clicks, "ΣC:", dinero);
+    }
+}
+
+
 
   // Guardado automático periódico (toma el nombre del input)
   function startAutoSave() {
     stopAutoSave();
     autoSaveTimer = setInterval(() => {
       const name = playerNameInput.value;
-      const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
-      const dinero = sigTotalEl ? Number(sigTotalEl.innerText) || 0 : 0;
-      savePlayerData(name, clicks, dinero, true); // isAutoSave = true
+      const clicks = (window.state && window.state.totalClicks) || 0;
+      const dinero = (window.state && window.state.sig) || 0;
+      const rebirths = (window.state && window.state.rebirths) || 0;
+      const fososOwned = (window.state && window.state.fososOwned) ? window.state.fososOwned.length : 0;
+
+      savePlayerData(name, clicks, dinero, rebirths, fososOwned, true); // isAutoSave = true
       // actualizar panel (local)
       refreshPanelFromGameUI();
     }, autoSaveInterval);
@@ -1005,30 +1065,40 @@
 
   // Botones UI
   btnSaveNow.addEventListener("click", async () => {
-    const name = playerNameInput.value;
-    if (!name || name.trim() === "" || name === "Jugador") {
+    const newName = playerNameInput.value.trim();
+    if (!newName || newName === "" || newName.startsWith("Jugador#")) {
         registerPrompt.style.display = 'block';
         showToast("Por favor, introduce un nombre válido.", "error");
         return;
     }
 
     // Comprobar si el nombre ya existe
-    const key = sanitizeKey(name);
+    const key = sanitizeKey(newName);
     const playerRef = ref(db, 'players/' + key);
     const snapshot = await get(playerRef);
 
     const oldName = localStorage.getItem('playerName');
 
-    if (snapshot.exists() && name !== oldName) {
+    if (snapshot.exists() && newName !== oldName) {
         showToast("Ese nombre ya está en uso. Elige otro.", "error");
     } else {
+        // Si el nombre ha cambiado, borramos el antiguo de la DB
+        if (oldName && oldName !== newName) {
+            const oldKey = sanitizeKey(oldName);
+            set(ref(db, 'players/' + oldKey), null);
+        }
+
         // Guardar el nombre localmente
-        localStorage.setItem('playerName', name);
+        localStorage.setItem('playerName', newName);
+        localPlayerId = newName; // Actualizamos el ID local también
         registerPrompt.style.display = 'none';
 
-        const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
-        const dinero = sigTotalEl ? Number(sigTotalEl.innerText) || 0 : 0;
-        savePlayerData(name, clicks, dinero);
+        // Usar siempre el estado del juego como fuente de verdad
+        const clicks = window.state.totalClicks || 0;
+        const dinero = window.state.sig || 0;
+        const rebirths = window.state.rebirths || 0;
+        const fososOwned = window.state.fososOwned.length || 0;
+        savePlayerData(newName, clicks, dinero, rebirths, fososOwned);
         refreshPanelFromGameUI();
         btnSaveNow.innerText = "Guardado ✓";
         setTimeout(()=> btnSaveNow.innerText = "Guardar", 900);
@@ -1081,9 +1151,11 @@
     window.addEventListener("beforeunload", () => {
       if (!db) return;
       const name = playerNameInput.value;
-      const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
-      const dinero = state.sig || 0;
-      try { savePlayerData(name, clicks, dinero); } catch(e){}
+      const clicks = (window.state && window.state.totalClicks) || 0;
+      const dinero = (window.state && window.state.sig) || 0;
+      const rebirths = (window.state && window.state.rebirths) || 0;
+      const fososOwned = (window.state && window.state.fososOwned) ? window.state.fososOwned.length : 0;
+      try { savePlayerData(name, clicks, dinero, rebirths, fososOwned); } catch(e) { console.error("Error on beforeunload save:", e); }
     });
     playerNameInput.addEventListener('input', () => {
         registerPrompt.style.display = (!name || name === "Jugador") ? 'block' : 'none';
@@ -2792,6 +2864,12 @@
             name: 'Foso 45',
             cost: 1e27, background: 'radial-gradient(ellipse at bottom, #000000 0%, #ffffff 100%)',
             perClick: 60000000
+        }, {
+            id: 46,
+            name: 'Foso Pollo',
+            cost: Infinity, // No se puede comprar
+            background: 'radial-gradient(ellipse at bottom, #556b2f 0%, #2e4600 100%)',
+            perClick: 1.5e6 // 1.5 Millones
         }];
 
         const GEM_FOSOS = Array.from({ length: 30 }, (_, i) => ({
@@ -2883,6 +2961,14 @@
             { cost: 500000, chance: 0.03, multiplier: 15 }, // 3% chance for x15
             { cost: 2500000, chance: 0.04, multiplier: 20 }, // 4% chance for x20
             { cost: 10000000, chance: 0.05, multiplier: 25 }, // 5% chance for x25
+        ];
+
+        const PASSIVE_CHARGE_UPGRADES = [
+            { cost: 50000, chargePerSecond: 0.5 }, // +0.5% por segundo
+            { cost: 250000, chargePerSecond: 1 },
+            { cost: 1000000, chargePerSecond: 2 },
+            { cost: 5000000, chargePerSecond: 4 },
+            { cost: 20000000, chargePerSecond: 8 },
         ];
 
         const EFFICIENCY_UPGRADES = [
@@ -3039,6 +3125,19 @@
                     showToast("x3 Clics ha terminado.", "info");
                 }, 30000);
             }},
+            { label: "Foso Pollo 🍗", reward: (s) => {
+                const fosoPolloIndex = FOSOS.length - 1;
+                if (!s.fososOwned.includes(fosoPolloIndex)) {
+                    s.fososOwned.push(fosoPolloIndex);
+                    showToast("¡PREMIO GORDO! ¡Has ganado el Foso Pollo 🍗!", 'success', 5000);
+                } else {
+                    const consolationPrize = 50000 * (s.wheelRewardMultiplier || 1);
+                    s.sig += consolationPrize;
+                    s.totalSigEarned += consolationPrize;
+                    showToast(`Ya tienes el Foso Pollo. ¡Recibes ${formatNum(consolationPrize)} ΣC en su lugar!`, 'info');
+                }
+            }},
+            
         ];
 
         const RANKS = [
@@ -3125,6 +3224,7 @@
                 autoclicker: 0,
                 afk: 0,
                 critical: 0,
+                passive_charge: 0,
                 combo: 0,
                 liquid_luck: 0,
             },
@@ -3247,6 +3347,9 @@
         const sfxVolumeSlider = document.getElementById('sfxVolume');
 
         let isCharging = false;
+        const fosoSelector = document.getElementById('fosoSelector');
+        const prevFosoBtn = document.getElementById('prevFosoBtn');
+        const nextFosoBtn = document.getElementById('nextFosoBtn');
         let anyNotification = false;
         let chargeInterval = null;
         let autoClickTimer = null;
@@ -3545,24 +3648,34 @@
             }
 
             state.chests.splice(index, 1);
-            state.chestsOpened = (state.chestsOpened || 0) + 1;
+            state.chestsOpened = (state.chestsOpened || 0) + 1; // CORREGIDO
             
             setTimeout(() => {
                 // Simple reward logic for now
                 playSound('chestOpenSfx');
-                // La recompensa será 60 segundos de tus ganancias por clic actuales.
-                const basePer = FOSOS[state.activeFosoIndex]?.perClick || 1;
-                const currentPerClick = basePer * state.perClickMult * (1 + state.rebirthBonus);
-                const rewardAmount = Math.floor(currentPerClick * 60 * (Math.random() * 0.5 + 0.75)); // Entre 75% y 125% de 60s de ganancias
-                state.sig += rewardAmount;
-                state.totalSigEarned += rewardAmount;
-                showToast(`¡El cofre contenía ${formatNum(rewardAmount)} ΣC!`, 'success', 4000);
+                const outcome = Math.random();
+                if (outcome < 0.05) { // 5% chance for Foso Pollo
+                    const fosoPolloIndex = FOSOS.length - 1;
+                    if (!state.fososOwned.includes(fosoPolloIndex)) {
+                        state.fososOwned.push(fosoPolloIndex);
+                        showToast("¡INCREÍBLE! ¡El cofre contenía el legendario Foso Pollo 🍗!", 'success', 5000);
+                    } else {
+                        const consolationPrize = Math.floor(state.sig * 0.1); // 10% of current sig as consolation
+                        state.sig += consolationPrize;
+                        state.totalSigEarned += consolationPrize;
+                        showToast(`Ya tienes el Foso Pollo. ¡Recibes ${formatNum(consolationPrize)} ΣC en su lugar!`, 'info', 4000);
+                    }
+                } else { // 95% chance for normal reward
+                    const rewardAmount = Math.floor((state.sig * 0.05) + (Math.random() * state.sig * 0.05)); // Between 5% and 10% of current ΣC
+                    state.sig += rewardAmount;
+                    state.totalSigEarned += rewardAmount;
+                    showToast(`¡El cofre contenía ${formatNum(rewardAmount)} ΣC!`, 'success', 4000);
+                }
                 openChestsModal(); // Refresh the modal
                 saveState();
                 checkAchievements();
             }, 500);
         }
-
         function saveState() {
             state.lastPlayed = Date.now();
             try {
@@ -3598,6 +3711,9 @@
                 }
                 if (state.upgradeLevels.autoclicker === undefined) {
                     state.upgradeLevels.critical = 0;
+                }
+                if (state.upgradeLevels.passive_charge === undefined) {
+                    state.upgradeLevels.passive_charge = 0;
                 }
                 if (!state.achievements) {
                     state.achievements = {};
@@ -3652,19 +3768,17 @@
             }
         }
 
-        function formatNum(n) {
-            const suffixes = [
-                { value: 1e3, symbol: "k" }, { value: 1e6, symbol: "m" },
-                { value: 1e9, symbol: "b" }, { value: 1e12, symbol: "t" },
-                { value: 1e15, symbol: "qa" }, { value: 1e18, symbol: "qi" },
-                { value: 1e21, symbol: "sx" }, { value: 1e24, symbol: "sp" },
-                { value: 1e27, symbol: "oc" }, { value: 1e30, symbol: "no" },
-                { value: 1e33, symbol: "dc" }
-            ];
-            const item = suffixes.slice().reverse().find(item => n >= item.value);
-            if (item) return (n / item.value).toFixed(2).replace(/\.00$/, '') + item.symbol;
-            return Math.floor(n).toString();
-        }
+    function formatNum(n) {
+    if (isNaN(n)) return "0";
+    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+    if (Math.abs(n) < 1000) return n.toLocaleString();
+
+    const i = Math.floor(Math.log10(Math.abs(n)) / 3);
+    const num = (n / Math.pow(10, i * 3));
+
+    return num.toFixed(num < 10 ? 2 : 1).replace(/\.0+$/, "") + suffixes[i];
+}
+
 
         function render() {
             const lang = state.lang || 'es';
@@ -3681,6 +3795,13 @@
             if (rankTitleEl) {
                 rankTitleEl.innerHTML = `<span data-lang="rank_label">Rango</span>: <span data-lang="${currentRank.key}">${LANGUAGES[lang][currentRank.key]}</span>`;
             }
+
+            // Render Foso Selector
+            const currentFoso = FOSOS[state.activeFosoIndex];
+            document.getElementById('currentFosoName').textContent = currentFoso.name;
+            const fosoPerClick = currentFoso.perClick;
+            document.getElementById('currentFosoStats').textContent = `${formatNum(fosoPerClick)} ΣC / clic`;
+
 
             let petMultiplier = 1;
             if (state.equippedPet && PETS[state.equippedPet] && state.unlockedPets.includes(state.equippedPet)) {
@@ -3812,12 +3933,13 @@
             upgradesGrid.innerHTML = '';
 
             const allUpgrades = {
-                autoclicker: { upgrades: AUTOCLICKER_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 10h4v4h-4zM4 10h4v4H4zM10 4h4v4h-4zM10 16h4v4h-4z"/><path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/></svg>', desc: 'Añade clics automáticos por segundo.' },
+                autoclicker: { upgrades: AUTOCLICKER_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 10h4v4h-4zM4 10h4v4H4zM10 4h4v4h-4zM10 16h4v4h-4z"/><path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/></svg>', desc: 'Añade clics automáticos por segundo.' },                
                 battery: { upgrades: BATTERY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14h-2v-6h2v6z"/></svg>', desc: 'Aumenta la capacidad máxima de la batería.' },
                 critical: { upgrades: CRITICAL_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z"/></svg>', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
                 efficiency: { upgrades: EFFICIENCY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"/></svg>', desc: 'Reduce el consumo de batería por clic.' },
                 combo: { upgrades: COMBO_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2 L4 14h6l-1 8 10-12h-7z"/></svg>', desc: 'Aumenta el tiempo para mantener el combo.' },
                 liquid_luck: { upgrades: LIQUID_LUCK_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
+                passive_charge: { upgrades: PASSIVE_CHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zm10-2h2m-4 0h-2m-4 0H7m10 4h2m-4 0h-2m-4 0H7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>', desc: 'Recarga la batería automáticamente con el tiempo.' },
             };
 
             for (const type in allUpgrades) {
@@ -5500,7 +5622,12 @@
                                 showToast('Foso nuevo equipado, ¡listo para usar!', 'success');
                             }
                         } else {
-                            if (state.sig >= currentCost) {
+                            const isNextFoso = index === state.fososOwned.length;
+                            if (!isNextFoso) {
+                                showToast('Debes comprar los fosos anteriores primero.', 'error');
+                                return;
+                            }
+                            if (state.sig >= currentCost) { // Ahora comprueba si tiene dinero
                                 state.sig -= currentCost;
                                 state.fososOwned.push(index);
                                 state.activeFosoIndex = index;
@@ -5530,6 +5657,28 @@
                         buyShopFlavor(flavorId);
                     }
                     render();
+                });
+            }
+
+            if (fosoSelector) {
+                prevFosoBtn.addEventListener('click', () => {
+                    const ownedFososSorted = [...state.fososOwned].sort((a, b) => a - b);
+                    let currentIndex = ownedFososSorted.indexOf(state.activeFosoIndex);
+                    currentIndex = (currentIndex - 1 + ownedFososSorted.length) % ownedFososSorted.length;
+                    state.activeFosoIndex = ownedFososSorted[currentIndex];
+                    showToast(`Foso ${FOSOS[state.activeFosoIndex].name} equipado.`, 'info');
+                    render();
+                    saveState();
+                });
+
+                nextFosoBtn.addEventListener('click', () => {
+                    const ownedFososSorted = [...state.fososOwned].sort((a, b) => a - b);
+                    let currentIndex = ownedFososSorted.indexOf(state.activeFosoIndex);
+                    currentIndex = (currentIndex + 1) % ownedFososSorted.length;
+                    state.activeFosoIndex = ownedFososSorted[currentIndex];
+                    showToast(`Foso ${FOSOS[state.activeFosoIndex].name} equipado.`, 'info');
+                    render();
+                    saveState();
                 });
             }
 
@@ -5895,7 +6044,21 @@
             //     state.clicksThisSecond = 0;
             // }, 1000);
             
-            setInterval(() => { render(); updateMarketStatus(); updateEventUI(); renderActiveFlavor(); }, CONFIG.uiTickMs);
+            setInterval(() => {
+                // Lógica de carga pasiva
+                const passiveChargeLevel = state.upgradeLevels.passive_charge || 0;
+                if (passiveChargeLevel > 0) {
+                    const chargeRate = PASSIVE_CHARGE_UPGRADES[passiveChargeLevel - 1].chargePerSecond;
+                    if (state.battery < state.maxBattery) {
+                        state.battery = Math.min(state.maxBattery, state.battery + chargeRate);
+                    }
+                }
+
+                render(); 
+                updateMarketStatus(); 
+                updateEventUI(); 
+                renderActiveFlavor(); 
+            }, CONFIG.uiTickMs);
             setInterval(calculateAfkEarnings, 60000);
             setInterval(checkWheelCooldown, 1000);
             checkDailyReward();
@@ -6286,13 +6449,33 @@
                 });
             }
 
+            if (fosoSelector) {
+                prevFosoBtn.addEventListener('click', () => {
+                    const ownedFososSorted = [...state.fososOwned].sort((a, b) => a - b);
+                    let currentIndex = ownedFososSorted.indexOf(state.activeFosoIndex);
+                    currentIndex = (currentIndex - 1 + ownedFososSorted.length) % ownedFososSorted.length;
+                    state.activeFosoIndex = ownedFososSorted[currentIndex];
+                    showToast(`Foso ${FOSOS[state.activeFosoIndex].name} equipado.`, 'info');
+                    render();
+                });
+
+                nextFosoBtn.addEventListener('click', () => {
+                    const ownedFososSorted = [...state.fososOwned].sort((a, b) => a - b);
+                    let currentIndex = ownedFososSorted.indexOf(state.activeFosoIndex);
+                    currentIndex = (currentIndex + 1) % ownedFososSorted.length;
+                    state.activeFosoIndex = ownedFososSorted[currentIndex];
+                    showToast(`Foso ${FOSOS[state.activeFosoIndex].name} equipado.`, 'info');
+                    render();
+                });
+            }
+
             if (upgradesGrid) {
                 upgradesGrid.addEventListener('click', (e) => {
                     const button = e.target.closest('button[data-upgrade]');
                     if (!button) return;
 
                     const upgradeType = button.dataset.upgrade;
-                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES };
+                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES, passive_charge: PASSIVE_CHARGE_UPGRADES };
                     const upgrades = allUpgrades[upgradeType];
                     const level = state.upgradeLevels[upgradeType] || 0;
 
@@ -6313,34 +6496,6 @@
                 });
             }
 
-        });
-
-        function handlePetAction(e) {
-            const button = e.target.closest('.pet-action-btn');
-            if (!button) return;
-
-            const card = button.closest('.shopCard');
-            const petId = card.dataset.petId;
-            const pet = PETS[petId];
-            const action = button.dataset.action;
-
-            if (action === 'buy') {
-                if (state.gems >= pet.cost) {
-                    state.gems -= pet.cost;
-                    state.unlockedPets.push(petId);
-                    playSound('buySfx');
-                    showToast(`¡Has adoptado a ${pet.name}!`, 'success');
-                    saveState();
-                    renderPets();
-                } else {
-                    showToast('No tienes suficientes gemas.', 'error');
-                }
-            } else if (action === 'equip') {
-                state.equippedPet = petId;
-                playSound('successSfx');
-                saveState();
-                renderPets();
-            }
         }
     })();
 </script>
