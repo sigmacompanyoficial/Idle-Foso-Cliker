@@ -697,6 +697,54 @@
   font-weight: bold;
   color: #fff;
 }
+#vaperWrap, .vaperWrap {
+  position: absolute;
+  left: calc(50% + 100px);
+  transform: translateX(-50%);
+  z-index: 5;
+}
+/* --- Scroll vertical en la tabla de ranking --- */
+#rankingContainer {
+  max-height: 400px;   /* altura máxima visible */
+  overflow-y: auto;    /* activa scroll vertical */
+  scrollbar-width: thin; /* estiliza scroll (Firefox) */
+}
+
+/* opcional: estilo más limpio en navegadores webkit */
+#rankingContainer::-webkit-scrollbar {
+  width: 8px;
+}
+#rankingContainer::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
+}
+#rankingContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5);
+}
+/* --- Scroll vertical solo dentro del área del ranking --- */
+#rankingContainer {
+  max-height: 250px;   /* ajusta según el espacio del panel */
+  overflow-y: auto;    /* activa scroll vertical */
+  overflow-x: hidden;  /* evita desplazamiento lateral */
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  margin-top: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+
+/* scroll más limpio en Chrome / Edge */
+#rankingContainer::-webkit-scrollbar {
+  width: 8px;
+}
+#rankingContainer::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
+}
+#rankingContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5);
+}
+
 @media (max-width:900px){
   /* en pantallas pequeñas permitimos ocultar el panel con botón */
   #rankingPanel.collapsed { transform: translateX(-220px); transition: transform .25s ease; }
@@ -835,14 +883,16 @@
                 <div class="metaTiny" style="flex:1;color:var(--muted,#9fb2c8)">ΣC: <span id="panelSigma">0</span></div>
                 <div class="metaTiny" style="color:var(--muted,#9fb2c8)">Clicks: <span id="panelClicks">0</span></div>
               </div>
-              <table aria-live="polite" role="table">
-                <thead>
-                  <tr><th>Jugador</th><th style="text-align:center">Clics</th><th style="text-align:center">ΣC</th></tr>
-                </thead>
-                <tbody id="rankingTable">
-                  <tr id="rankingEmptyRow"><td colspan="3" id="rankingEmpty">Cargando ranking…</td></tr>
-                </tbody>
-              </table>
+              <div id="rankingContainer">
+                <table aria-live="polite" role="table">
+                  <thead>
+                    <tr><th>Jugador</th><th style="text-align:center">Clics</th><th style="text-align:center">ΣC</th></tr>
+                  </thead>
+                  <tbody id="rankingTable">
+                    <tr id="rankingEmptyRow"><td colspan="3" id="rankingEmpty">Cargando ranking…</td></tr>
+                  </tbody>
+                </table>
+              </div>
               <div style="margin-top:12px; display:flex; gap:8px;">
                 <button id="btnToggleSave" class="mini-btn ghost" title="Activar/Desactivar guardado automático">Auto-save: ON</button>
                 <button id="btnRefreshRanking" class="mini-btn ghost" title="Forzar recarga del ranking">Refrescar</button>
@@ -5659,6 +5709,7 @@
                             state.upgradeLevels[upgradeType]++;
                             if (upgradeType === 'battery') state.maxBattery = upgrades[level].capacity;
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
+                            if (upgradeType === 'autorecharge') updateAutoRechargeLoop();
                             playSound('buySfx');
                             showToast(`¡Mejora de ${upgradeType} comprada!`, 'success');
                             renderUpgrades();
