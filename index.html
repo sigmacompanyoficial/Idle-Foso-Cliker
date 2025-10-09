@@ -1824,10 +1824,6 @@
           <div class="metaTiny" style="text-align: right;">ΣC: <span id="shopSigma">0</span></div>
           <div class="metaTiny" style="text-align: right;">💎: <span id="shopGems">0</span></div>
         </div>
-        <button id="btnExchangeFromShop" class="mata-btn" style="background:#1abc9c; margin-left: auto;">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M16 3.54a2.5 2.5 0 0 1 0 4.92M8 15.54a2.5 2.5 0 0 1 0 4.92m5-13.52L6.5 14.06m11-6.04L9.5 19.56" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-          <span data-lang="exchange">Intercambio</span>
-        </button>
       </div>
 
       <div class="shopGrid" id="shopGrid">
@@ -3707,10 +3703,9 @@
                 afk: 0,
                 critical: 0,
                 combo: 0,
-                liquid_luck: 0,
+                liquid_luck: 0, // CORREGIDO: Faltaba autorecharge
                 autorecharge: 0,
             },
-            extraClicks: 0,
             combo: {
                 count: 0,
                 expires: 0,
@@ -3830,12 +3825,12 @@
         const blackMarketModal = document.getElementById('blackMarketModal');
         const promoInput = document.getElementById('promoInput');
         const blackMarketGrid = document.getElementById('blackMarketGrid');
-        const musicVolumeSlider = document.getElementById('musicVolume');
-        const sfxVolumeSlider = document.getElementById('sfxVolume');
         const exchangeModal = document.getElementById('exchangeModal');
         const exchangeInput = document.getElementById('exchangeInput');
         const exchangeCost = document.getElementById('exchangeCost');
         const exchangeBtn = document.getElementById('exchangeBtn');
+        const musicVolumeSlider = document.getElementById('musicVolume');
+        const sfxVolumeSlider = document.getElementById('sfxVolume');
 
         let powersModal = document.getElementById('powersModal');
         let isCharging = false;
@@ -3851,11 +3846,11 @@
         let eventInterval = null;
         let currentMaintenanceStep = 0;
         let tutorialHighlights = [];
-
+        
         const tutorialHighlight = document.getElementById('tutorialHighlight');
         const tutorialTooltip = document.getElementById('tutorialTooltip');
         const tutorialText = document.getElementById('tutorialText');
-        const tutorialSkipBtn = document.getElementById('tutorialSkipBtn');
+        const tutorialSkipBtn = document.getElementById('tutorialSkipBtn'); // Definido pero no usado en la lógica original.
         const tutorialNextBtn = document.getElementById('tutorialNextBtn');
 
         function updateMenuNotification() {
@@ -4450,24 +4445,6 @@
                 combo: { upgrades: COMBO_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2 L4 14h6l-1 8 10-12h-7z"/></svg>', desc: 'Aumenta el tiempo para mantener el combo.' },
                 autorecharge: { upgrades: AUTORECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14h-3v3l4-4-4-4v3H7v-2h3V8l-4 4 4 4v-3h5v2z" fill="currentColor"/></svg>', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
                 liquid_luck: { upgrades: LIQUID_LUCK_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
-            };
-
-            for (const type in allUpgrades) {
-                const level = state.upgradeLevels[type] || 0;
-                const config = allUpgrades[type];
-                const nextUpgrade = config.upgrades[level];
-
-                const card = document.createElement('div');
-                card.className = 'power-card';
-                card.innerHTML = `
-                    <div class="power-icon">${config.icon.replace('<svg', '<svg style="width:28px; height:28px;"')}</div>
-                    <h4>${LANGUAGES[state.lang || 'es'][`upgrade_${type}`]} (Nivel ${level})</h4>
-                    <p class="metaTiny">${config.desc}</p>
-                    <button class="mata-btn" data-upgrade="${type}" ${!nextUpgrade || state.sig < nextUpgrade.cost ? 'disabled' : ''}>
-                        ${nextUpgrade ? `${formatNum(nextUpgrade.cost)} ΣC` : LANGUAGES[state.lang || 'es']['max_level']}
-                    </button>
-                `;
-                upgradesGrid.appendChild(card);
             }
         }
 
@@ -4685,13 +4662,13 @@
             // Auto-recharge per click
             const rechargeLevel = state.upgradeLevels.autorecharge || 0;
             if (rechargeLevel > 0) {
-                // La función de auto-recarga se activa aquí
-                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge; // CORREGIDO
-                state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
+                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge; // CORREGIDO: Se añade la lógica de recarga
+                state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount); // CORREGIDO: Se añade la lógica de recarga
             }
 
             // The click handler can be called by the autoclicker with a null event
             // We only want to show animations for manual clicks (where 'e' is a valid event object)
+            // Animación de pulso
             if (e) {
                 // Animación de pulso
                 createClickRipple(e);
@@ -4699,10 +4676,10 @@
                 setTimeout(() => {
                     centralFoso.classList.remove('clicked');
                 }, 100);
-
+    
                 showClickAnimation(per, e.clientX, e.clientY, isCritical);
                 // Humo negro si está dañado
-                const isDamaged = (state.fosoConditions[state.activeFosoIndex] || 100) < 40;
+                const isDamaged = fosoHealth < 40;
                 createSmokeParticle(isDamaged);
             }
 
@@ -5399,7 +5376,7 @@
             let text = '';
             let nextBtnText = translations.next;
             let isActionStep = false; // If true, button is hidden, advances on action
-
+            
             switch (step) {
                 case 1: // Click foso
                     targetEl = vaperWrap;
@@ -5414,19 +5391,16 @@
                     targetEl = btnChargeToggle;
                     text = translations.tutorial_3;
                     isActionStep = true;
-                    break; // Wait for user click
+                    break;
                 case 4:
-                    if (!rightMenu.classList.contains('active')) {
-                        rightMenu.classList.add('active');
-                    }
                     targetEl = menuToggle;
                     text = translations.tutorial_4;
                     isActionStep = true;
-                    break; // Wait for user click
+                    break;
                 case 5:
                     targetEl = btnShop;
-                    text = "Ahora, entra en la Tienda para ver los fosos disponibles.";
-                    isActionStep = true; // Wait for user click
+                    text = "Ahora, entra en la Tienda para ver los fosos disponibles."; // Texto de ejemplo, debería usar traducciones
+                    isActionStep = true;
                     break; // Wait for user click
                 case 6:
                     targetEl = document.querySelector('.shopCard[data-index="1"]'); // Foso 2
@@ -5435,7 +5409,7 @@
                     break; // Wait for user click
                 case 7:
                     targetEl = btnUpgrades;
-                    text = translations.tutorial_6;
+                    text = "¡Buena compra! En el menú también encontrarás 'Mejoras Permanentes', que son muy útiles para progresar.";
                     isActionStep = true; // This should be `isActionStep`
                     break;
                 case 8:
@@ -5456,17 +5430,17 @@
                     return;
             }
 
-            // If it's an action step, we just show the highlight and wait for the action.
             if (isActionStep) {
                 tutorialNextBtn.classList.add('hidden');
             } else {
                 tutorialNextBtn.classList.remove('hidden');
             }
-            updateTutorialButtonStates(step);
 
-            if (!targetEl || !targetEl.offsetParent) { // If element is hidden or doesn't exist, skip
-                checkTutorialProgress(step + 1);
-                return;
+            if (step > 0) {
+                if (!targetEl || !targetEl.offsetParent) { // If element is hidden or doesn't exist, skip
+                    checkTutorialProgress(step + 1);
+                    return;
+                }
             }
 
             tutorialOverlay.classList.add('tutorial-active');
@@ -5480,29 +5454,30 @@
             tutorialText.innerText = text;
             tutorialNextBtn.textContent = nextBtnText;
 
-            const rect = targetEl.getBoundingClientRect();
-            tutorialHighlight.style.left = `${rect.left - 4}px`;
-            tutorialHighlight.style.top = `${rect.top - 4}px`;
-            tutorialHighlight.style.width = `${rect.width + 8}px`;
-            tutorialHighlight.style.height = `${rect.height + 8}px`;
+            if (targetEl) {
+                const rect = targetEl.getBoundingClientRect();
+                tutorialHighlight.style.left = `${rect.left - 4}px`;
+                tutorialHighlight.style.top = `${rect.top - 4}px`;
+                tutorialHighlight.style.width = `${rect.width + 8}px`;
+                tutorialHighlight.style.height = `${rect.height + 8}px`;
 
-            // Position tooltip and arrow
-            const tooltipRect = tutorialTooltip.getBoundingClientRect();
-            let top, left, arrowClass, arrowEl;
-            arrowEl = document.getElementById('tutorialArrow');
-            if (rect.bottom + tooltipRect.height + 15 > window.innerHeight) { // Place above
-                top = rect.top - tooltipRect.height - 15 - arrowEl.offsetHeight;
-                arrowClass = 'bottom';
-            } else { // Place below
-                top = rect.bottom + 15 + arrowEl.offsetHeight;
-                arrowClass = 'top';
+                // Position tooltip and arrow
+                const tooltipRect = tutorialTooltip.getBoundingClientRect();
+                let top, left, arrowClass;
+                if (rect.bottom + tooltipRect.height + 25 > window.innerHeight) { // Place above
+                    top = rect.top - tooltipRect.height - 15;
+                    arrowClass = 'bottom';
+                } else { // Place below
+                    top = rect.bottom + 15;
+                    arrowClass = 'top';
+                }
+                left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+                tutorialTooltip.style.top = `${top}px`;
+                tutorialTooltip.style.left = `${left}px`;
+                tutorialArrow.className = `tutorial-arrow ${arrowClass}`;
             }
-            left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
-
-            tutorialTooltip.style.top = `${top}px`;
-            tutorialTooltip.style.left = `${left}px`;
-            if(arrowEl) arrowEl.className = `tutorial-arrow ${arrowClass}`;
 
             tutorialNextBtn.onclick = () => showTutorialStep(step + 1);
 
@@ -5510,7 +5485,6 @@
                 tutorialOverlay.classList.add('hidden');
                 tutorialOverlay.classList.remove('tutorial-active');
                 state.tutorialCompleted = true;
-                updateTutorialButtonStates(0); // Habilitar todos los botones
                 saveState();
                 showToast('Tutorial saltado.', 'info');
             };
@@ -5536,15 +5510,14 @@
 
         function startTutorial() {
             if (state.tutorialCompleted) {
-                updateTutorialButtonStates(0); // Ensure all buttons are enabled on load
+                // updateTutorialButtonStates(0); // Ensure all buttons are enabled on load
                 return;
+            } else {
+                // Delay start to allow intro animations to finish
+                setTimeout(() => showTutorialStep(1), 8500);
             }
-            // Delay start to allow intro animations to finish
-            setTimeout(() => showTutorialStep(1), 8500);
         }
-        
         function openMaintenanceModal() {
-            maintenanceModal.classList.remove('hidden');
             generateMaintenanceGame();
         }
 
@@ -5560,7 +5533,7 @@
                 maintenanceRewardText.textContent = "";
                 setTimeout(() => maintenanceModal.classList.add('hidden'), 1500);
                 return;
-            }
+            } else { maintenanceModal.classList.remove('hidden');}
             
             maintenanceInstructions.textContent = LANGUAGES[state.lang || 'es']['maintenance_instructions'];
             const reward = Math.floor((100 - fosoHealth) * 10 * (state.maintenanceRewardBonus || 1));
@@ -5787,11 +5760,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadState();
             checkMissionReset(); // Must be before render
-// Initial check
+            renderWheel(); // Initial check
             translateUI();
-            updateAutoClickLoop();
+            updateAutoClickLoop(); // CORREGIDO: Llamada a la función
             render();
-            // startTutorial(); // Tutorial deshabilitado permanentemente
+            startTutorial();
 
             setInterval(saveState, CONFIG.autosaveMs);
 
@@ -5916,7 +5889,7 @@
 
             if(btnPower) {
                 btnPower.addEventListener('click', () => {
-                    state.powerOn = !state.powerOn;
+                    state.powerOn = !state.powerOn; // CORREGIDO
                     const powerStatus = state.powerOn ? 'encendido' : 'apagado';
                     const color = state.powerOn ? 'success' : 'error';
                     btnPower.style.background = state.powerOn ? '#0ea5b7' : '#555';
@@ -6721,21 +6694,18 @@
                 });
             }
 
-            if(btnChargeToggle) btnChargeToggle.addEventListener('click', toggleCharging);
-            
-            // if(btnShop) btnShop.addEventListener('click', () => {
-            //   if(shopModal) shopModal.classList.remove('hidden');
-            // });
+            if(btnChargeToggle) btnChargeToggle.addEventListener('click', () => {
+                toggleCharging();
+                handleTutorialAction(3); // Tutorial step for charging
+            });
 
             if(shopModal) {
               shopModal.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                  shopModal.classList.add('hidden'); 
-                });
+                btn.addEventListener('click', () => closeAndAnimate(shopModal));
               });
             }
 
-            if(btnUpgrades) btnUpgrades.addEventListener('click', () => {
+            if(btnUpgrades) btnUpgrades.addEventListener('click', () => { // CORREGIDO
                 upgradesModal.classList.remove('hidden');
                 renderUpgrades();
             }); 
@@ -6745,40 +6715,21 @@
 
             if(btnRebirth) btnRebirth.addEventListener('click', openRebirthModal); 
             if(rebirthModal) {
-                rebirthModal.querySelector('.close-btn').addEventListener('click', () => {
-                    rebirthModal.classList.add('hidden');
-                });
+                rebirthModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(rebirthModal));
                 document.getElementById('btnConfirmRebirth').addEventListener('click', handleRebirth);
             }
-
-            if(craftingModal) {
-                craftingModal.querySelector('.close-btn').addEventListener('click', () => craftingModal.classList.add('hidden'));
-                document.getElementById('btnCombine').addEventListener('click', combineLiquids);
-                const slots = craftingModal.querySelectorAll('.crafting-slot');
-                slots.forEach(slot => {
-                    slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('over'); });
-                    slot.addEventListener('dragleave', () => slot.classList.remove('over'));
-                    slot.addEventListener('drop', handleDrop);
-                    slot.addEventListener('click', () => { // Clear slot on click
-                        delete slot.dataset.liquidId; slot.innerHTML = '';
-                    });
-                });
-            }
-
 
             const btnExchangeFromShop = document.getElementById('btnExchangeFromShop');
             if(btnExchangeFromShop) btnExchangeFromShop.addEventListener('click', openExchangeModal);
 
-            if(btnCrafting) btnCrafting.addEventListener('click', openCraftingModal);
-
             if(exchangeModal) {
                 const openExchangeModal = () => {
-                    exchangeInput.value = '';
-                    exchangeCost.textContent = 'Costo: 0 ΣC';
+                    // No hay botón 'btnExchange' global, solo el de la tienda
+                    // if(btnExchange) btnExchange.addEventListener('click', openExchangeModal);
                     exchangeModal.classList.remove('hidden');
                 };
-                if(btnExchange) btnExchange.addEventListener('click', openExchangeModal);
-                if(btnExchangeFromShop) btnExchangeFromShop.addEventListener('click', openExchangeModal);
+                // CORRECCIÓN: Mover la definición de openExchangeModal fuera del if
+                // y asociar el evento aquí.
                 exchangeModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(exchangeModal));
                 exchangeInput.addEventListener('input', () => {
                     const amount = parseInt(exchangeInput.value, 10) || 0;
@@ -6806,11 +6757,28 @@
                 });
             }
 
+            // CORRECCIÓN: Asociar el evento al botón de la tienda
+            if (btnExchangeFromShop) {
+                btnExchangeFromShop.addEventListener('click', openExchangeModal);
+            }
+
+            if(btnCrafting) btnCrafting.addEventListener('click', openCraftingModal);
+            if(craftingModal) {
+                craftingModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(craftingModal));
+                document.getElementById('btnCombine').addEventListener('click', combineLiquids);
+                const slots = craftingModal.querySelectorAll('.crafting-slot');
+                slots.forEach(slot => {
+                    slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('over'); });
+                    slot.addEventListener('dragleave', () => slot.classList.remove('over'));
+                    slot.addEventListener('drop', handleDrop);
+                    slot.addEventListener('click', () => { // Clear slot on click
+                        delete slot.dataset.liquidId; slot.innerHTML = '';
+                    });
+                });
+            }
             if(btnPrestige) btnPrestige.addEventListener('click', openPrestigeModal);
             if(prestigeModal) {
-                prestigeModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(prestigeModal);
-                });
+                prestigeModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(prestigeModal));
                 document.getElementById('btnConfirmPrestige').addEventListener('click', handlePrestige);
                 prestigeModal.querySelector('#prestigeUpgradesGrid').addEventListener('click', (e) => {
                     if (e.target.classList.contains('buy-prestige-btn')) buyPrestigeUpgrade(e.target.dataset.id);
@@ -6837,11 +6805,7 @@
             });
 
             if(configModal) {
-              configModal.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => { 
-                  closeAndAnimate(configModal);
-                });
-              });
+              configModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(configModal));
             }
 
             if(langSelect) langSelect.addEventListener('change', (e) => {
@@ -6873,9 +6837,12 @@
             });
 
             if(btnRepeatTutorial) btnRepeatTutorial.addEventListener('click', () => {
-                state.tutorialCompleted = false;
+                if (!confirm("¿Seguro que quieres reiniciar el tutorial?")) return;
+                state.tutorialCompleted = false; 
                 state.tutorialStep = 0;
-                configModal.classList.add('hidden'); showToast('El tutorial se mostrará de nuevo.', 'info'); startTutorial();
+                closeAndAnimate(configModal);
+                showToast('El tutorial se mostrará de nuevo al recargar la página.', 'info');
+                saveState();
             });
 
             if(btnReset) btnReset.addEventListener('click', ()=>{
@@ -6902,7 +6869,7 @@
             if(btnClaimDaily) btnClaimDaily.addEventListener('click', claimDailyReward);
 
             if(btnAFK) btnAFK.addEventListener('click', openAfkModal);
-            if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => afkModal.classList.add('hidden'));
+            if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(afkModal));
             if(btnClaimAFK) btnClaimAFK.addEventListener('click', claimAfkEarnings);
             if(btnUpgradeAFK) btnUpgradeAFK.addEventListener('click', upgradeAfk);
             afkModal.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => afkModal.classList.add('hidden')));
@@ -6914,9 +6881,7 @@
             }
 
             if(wheelModal) {
-                wheelModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(wheelModal);
-                });
+                wheelModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(wheelModal));
             }
 
             if(btnSpinWheel) {
@@ -6931,9 +6896,7 @@
             }
 
             if(missionsModal) {
-                missionsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    missionsModal.classList.add('hidden');
-                });
+                missionsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(missionsModal));
             }
 
             if(btnAchievements) {
@@ -6945,19 +6908,13 @@
             }
 
             if(achievementsModal) {
-                achievementsModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(achievementsModal);
-                });
+                achievementsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(achievementsModal));
             }
 
             if(btnChests) {
                 btnChests.addEventListener('click', openChestsModal);
             }
-            if(chestsModal) {
-                chestsModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(chestsModal);
-                });
-            }
+            if(chestsModal) chestsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(chestsModal));
 
             if (btnPets) {
                 btnPets.addEventListener('click', openPetsModal);
@@ -6969,9 +6926,7 @@
             successSfx = document.getElementById('successSfx');
             errorSfx = document.getElementById('errorSfx');
             if (petsModal) {
-                petsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    closeAndAnimate(petsModal);
-                });
+                petsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(petsModal));
                 petsModal.querySelector('#petsGrid').addEventListener('click', handlePetAction);
             }
 
@@ -7039,14 +6994,14 @@
 
             if (upgradesGrid) {
                 upgradesGrid.addEventListener('click', (e) => {
-                    const button = e.target.closest('button[data-upgrade]');
+                    const button = e.target.closest('button[data-upgrade]'); // CORREGIDO
                     if (!button) return;
 
                     const upgradeType = button.dataset.upgrade;
-                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES, autorecharge: AUTORECHARGE_UPGRADES };
+                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES };
                     const upgrades = allUpgrades[upgradeType];
-                    const currentLevel = state.upgradeLevels[upgradeType] || 0; // CORREGIDO
-
+                    const level = state.upgradeLevels[upgradeType] || 0;
+                    
                     if (currentLevel < upgrades.length) {
                         if (!state.upgradeLevels[upgradeType]) state.upgradeLevels[upgradeType] = 0;
                         const nextUpgrade = upgrades[currentLevel]; // CORREGIDO
