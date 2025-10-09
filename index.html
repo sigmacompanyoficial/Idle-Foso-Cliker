@@ -116,26 +116,12 @@
     padding: 12px;
   }
   #chatPanel h3 { margin: 0 0 10px 0; color: var(--accent, #22d3ee); font-weight: 800; display:flex; align-items:center; gap:8px; }
-#chatPanel {
-  height: 300px;            /* 🔹 fija la altura total del panel */
-  overflow: hidden;         /* evita que crezca más */
-  display: flex;
-  flex-direction: column;
-}
-
-#mensajes {
-  flex-grow: 1;
-  min-height: 0;            /* permite que el scroll funcione correctamente */
-  overflow-y: auto;
-}
-
-#mensajes li {
-  max-width: 90%;
-  overflow-wrap: break-word;
-  word-break: break-word;   /* 🔹 divide palabras largas (como URLs o spam) */
-  white-space: normal;      /* 🔹 permite que el texto haga salto de línea */
-}
-
+  #mensajes {
+    list-style: none; padding: 0; margin: 0; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  }
+  #mensajes li {
+    max-width: 80%; padding: 6px 10px; border-radius: 12px; position: relative; word-wrap: break-word; font-size: 13px; line-height: 1.3;
+  }
   #mensajes li .hora {
     font-size: 10px; color: var(--muted); display: block; text-align: right; margin-top: 4px;
   }
@@ -878,7 +864,7 @@
           <div class="chat-ranking-container">
             <!-- Chat Panel -->
             <div id="chatPanel">
-              <h3><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Chat Global</h3>
+              <h3><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Sigma Chat</h3>
               <ul id="mensajes"></ul>
               <div class="input-area">
                 <input id="msg" placeholder="Escribe un mensaje..." />
@@ -900,7 +886,7 @@
               <div id="rankingContainer">
                 <table aria-live="polite" role="table">
                   <thead>
-                    <tr><th>Jugador</th><th style="text-align:center">Clics</th><th style="text-align:center">ΣC</th></tr>
+                    <tr><th>Jugador</th><th style="text-align:center">Clics</th></tr>
                   </thead>
                   <tbody id="rankingTable">
                     <tr id="rankingEmptyRow"><td colspan="3" id="rankingEmpty">Cargando ranking…</td></tr>
@@ -1050,7 +1036,6 @@
       tr.innerHTML = `
         <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
         <td style="text-align:center">${p.clicks.toLocaleString()}</td>
-        <td style="text-align:center">${formatNum(p.dinero)}</td>
       `;
       rankingTable.appendChild(tr);
     });
@@ -1065,7 +1050,6 @@
             tr.innerHTML = `
                 <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(player.name)}">${playerIndex + 1}. ${escapeHtml(player.name)}</td>
                 <td style="text-align:center">${player.clicks.toLocaleString()}</td>
-                <td style="text-align:center">${formatNum(player.dinero)}</td>
             `;
             rankingTable.appendChild(tr);
         }
@@ -1787,11 +1771,11 @@
 
 <!-- 17 -->
 <div class="shopCard" data-index="16" title="Foso 17: Golden Dragon 🐉 (6B ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-16">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g17_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth17_shop)"/>
     <defs>
-      <linearGradient id="g17_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFA500"/></linearGradient>
+      <linearGradient id="g17_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#B8860B"/></linearGradient>
       <linearGradient id="mouth17_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a2c00"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1801,11 +1785,11 @@
 
 <!-- 18 -->
 <div class="shopCard" data-index="17" title="Foso 18: Ocean Breeze 🌊 (20B ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-17">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g18_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth18_shop)"/>
     <defs>
-      <linearGradient id="g18_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00c6ff"/><stop offset="100%" stop-color="#0072ff"/></linearGradient>
+      <linearGradient id="g18_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#00BFFF"/></linearGradient>
       <linearGradient id="mouth18_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eee"/><stop offset="100%" stop-color="#ccc"/></linearGradient>
     </defs>
   </svg>
@@ -1815,11 +1799,11 @@
 
 <!-- 19 -->
 <div class="shopCard" data-index="18" title="Foso 19: Ruby Red ❤️ (60B ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-18">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g19_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth19_shop)"/>
     <defs>
-      <linearGradient id="g19_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e52d27"/><stop offset="100%" stop-color="#b31217"/></linearGradient>
+      <linearGradient id="g19_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC143C"/><stop offset="100%" stop-color="#8B0000"/></linearGradient>
       <linearGradient id="mouth19_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1829,11 +1813,11 @@
 
 <!-- 20 -->
 <div class="shopCard" data-index="19" title="Foso 20: Emerald Green 💚 (200B ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-19">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g20_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth20_shop)"/>
     <defs>
-      <linearGradient id="g20_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#50c878"/><stop offset="100%" stop-color="#009e60"/></linearGradient>
+      <linearGradient id="g20_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#32CD32"/><stop offset="100%" stop-color="#006400"/></linearGradient>
       <linearGradient id="mouth20_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1843,11 +1827,11 @@
 
 <!-- 21 -->
 <div class="shopCard" data-index="20" title="Foso 21: Sapphire Blue 💙 (600B ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-20">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g21_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth21_shop)"/>
     <defs>
-      <linearGradient id="g21_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0f52ba"/><stop offset="100%" stop-color="#003366"/></linearGradient>
+      <linearGradient id="g21_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4169E1"/><stop offset="100%" stop-color="#00008B"/></linearGradient>
       <linearGradient id="mouth21_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1857,11 +1841,11 @@
 
 <!-- 22 -->
 <div class="shopCard" data-index="21" title="Foso 22: Amethyst Purple 💜 (2T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-21">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g22_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth22_shop)"/>
     <defs>
-      <linearGradient id="g22_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9966cc"/><stop offset="100%" stop-color="#6a0dad"/></linearGradient>
+      <linearGradient id="g22_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9370DB"/><stop offset="100%" stop-color="#4B0082"/></linearGradient>
       <linearGradient id="mouth22_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1871,11 +1855,11 @@
 
 <!-- 23 -->
 <div class="shopCard" data-index="22" title="Foso 23: Topaz Yellow 💛 (6T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-22">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g23_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth23_shop)"/>
     <defs>
-      <linearGradient id="g23_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffc87c"/><stop offset="100%" stop-color="#ffac4b"/></linearGradient>
+      <linearGradient id="g23_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFA500"/></linearGradient>
       <linearGradient id="mouth23_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1885,11 +1869,11 @@
 
 <!-- 24 -->
 <div class="shopCard" data-index="23" title="Foso 24: Onyx Black 🖤 (20T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-23">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g24_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth24_shop)"/>
     <defs>
-      <linearGradient id="g24_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#353535"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="g24_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F4F4F"/><stop offset="100%" stop-color="#000000"/></linearGradient>
       <linearGradient id="mouth24_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1899,11 +1883,11 @@
 
 <!-- 25 -->
 <div class="shopCard" data-index="24" title="Foso 25: Pearl White 🤍 (60T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-24">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g25_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth25_shop)"/>
     <defs>
-      <linearGradient id="g25_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fdfbfb"/><stop offset="100%" stop-color="#ebedee"/></linearGradient>
+      <linearGradient id="g25_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F5F5DC"/><stop offset="100%" stop-color="#D3D3D3"/></linearGradient>
       <linearGradient id="mouth25_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1913,11 +1897,11 @@
 
 <!-- 26 -->
 <div class="shopCard" data-index="25" title="Foso 26: Lava Flow 🌋 (200T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-25">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g26_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth26_shop)"/>
     <defs>
-      <linearGradient id="g26_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff4e00"/><stop offset="100%" stop-color="#ec9f05"/></linearGradient>
+      <linearGradient id="g26_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#FF8C00"/></linearGradient>
       <linearGradient id="mouth26_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1927,11 +1911,11 @@
 
 <!-- 27 -->
 <div class="shopCard" data-index="26" title="Foso 27: Arctic Chill 🧊 (600T ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-26">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g27_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth27_shop)"/>
     <defs>
-      <linearGradient id="g27_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0eafc"/><stop offset="100%" stop-color="#cfdef3"/></linearGradient>
+      <linearGradient id="g27_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ADD8E6"/><stop offset="100%" stop-color="#F0FFFF"/></linearGradient>
       <linearGradient id="mouth27_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1941,11 +1925,11 @@
 
 <!-- 28 -->
 <div class="shopCard" data-index="27" title="Foso 28: Jungle Vine 🌿 (2Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-27">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g28_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth28_shop)"/>
     <defs>
-      <linearGradient id="g28_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#add100"/><stop offset="100%" stop-color="#7b920a"/></linearGradient>
+      <linearGradient id="g28_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#228B22"/><stop offset="100%" stop-color="#006400"/></linearGradient>
       <linearGradient id="mouth28_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1955,11 +1939,11 @@
 
 <!-- 29 -->
 <div class="shopCard" data-index="28" title="Foso 29: Desert Mirage 🏜️ (6Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-28">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g29_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth29_shop)"/>
     <defs>
-      <linearGradient id="g29_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffb75e"/><stop offset="100%" stop-color="#ed8f03"/></linearGradient>
+      <linearGradient id="g29_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F4A460"/><stop offset="100%" stop-color="#D2691E"/></linearGradient>
       <linearGradient id="mouth29_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1969,11 +1953,11 @@
 
 <!-- 30 -->
 <div class="shopCard" data-index="29" title="Foso 30: Cyber Punk 🤖 (20Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-29">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g30_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth30_shop)"/>
     <defs>
-      <linearGradient id="g30_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00f2ff"/><stop offset="100%" stop-color="#00c9db"/></linearGradient>
+      <linearGradient id="g30_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00FFFF"/><stop offset="100%" stop-color="#FF00FF"/></linearGradient>
       <linearGradient id="mouth30_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1983,11 +1967,11 @@
 
 <!-- 31 -->
 <div class="shopCard" data-index="30" title="Foso 31: Steampunk ⚙️ (60Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-30">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g31_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth31_shop)"/>
     <defs>
-      <linearGradient id="g31_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c9a475"/><stop offset="100%" stop-color="#7a5c3c"/></linearGradient>
+      <linearGradient id="g31_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#CD853F"/><stop offset="100%" stop-color="#8B4513"/></linearGradient>
       <linearGradient id="mouth31_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -1997,11 +1981,11 @@
 
 <!-- 32 -->
 <div class="shopCard" data-index="31" title="Foso 32: Galaxy Quest 🌠 (200Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-31">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g32_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth32_shop)"/>
     <defs>
-      <linearGradient id="g32_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c3e50"/><stop offset="100%" stop-color="#fd746c"/></linearGradient>
+      <linearGradient id="g32_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#483D8B"/><stop offset="100%" stop-color="#000000"/></linearGradient>
       <linearGradient id="mouth32_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2011,11 +1995,11 @@
 
 <!-- 33 -->
 <div class="shopCard" data-index="32" title="Foso 33: Void 🕳️ (600Qa ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-32">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g33_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth33_shop)"/>
     <defs>
-      <linearGradient id="g33_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000000"/><stop offset="100%" stop-color="#434343"/></linearGradient>
+      <linearGradient id="g33_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1C1C1C"/><stop offset="100%" stop-color="#000000"/></linearGradient>
       <linearGradient id="mouth33_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2025,11 +2009,11 @@
 
 <!-- 34 -->
 <div class="shopCard" data-index="33" title="Foso 34: Aether ✨ (2Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-33">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g34_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth34_shop)"/>
     <defs>
-      <linearGradient id="g34_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c0c0c0"/><stop offset="100%" stop-color="#ffffff"/></linearGradient>
+      <linearGradient id="g34_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E6E6FA"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
       <linearGradient id="mouth34_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2039,11 +2023,11 @@
 
 <!-- 35 -->
 <div class="shopCard" data-index="34" title="Foso 35: Inferno 🔥 (6Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-34">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g35_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth35_shop)"/>
     <defs>
-      <linearGradient id="g35_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff416c"/><stop offset="100%" stop-color="#ff4b2b"/></linearGradient>
+      <linearGradient id="g35_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#DC143C"/></linearGradient>
       <linearGradient id="mouth35_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2053,11 +2037,11 @@
 
 <!-- 36 -->
 <div class="shopCard" data-index="35" title="Foso 36: Tsunami 🌊 (20Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-35">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g36_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth36_shop)"/>
     <defs>
-      <linearGradient id="g36_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1cb5e0"/><stop offset="100%" stop-color="#000046"/></linearGradient>
+      <linearGradient id="g36_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00BFFF"/><stop offset="100%" stop-color="#191970"/></linearGradient>
       <linearGradient id="mouth36_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2067,11 +2051,11 @@
 
 <!-- 37 -->
 <div class="shopCard" data-index="36" title="Foso 37: Earthquake 🌍 (60Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-36">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g37_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth37_shop)"/>
     <defs>
-      <linearGradient id="g37_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8c5221"/><stop offset="100%" stop-color="#5a3815"/></linearGradient>
+      <linearGradient id="g37_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A0522D"/><stop offset="100%" stop-color="#8B4513"/></linearGradient>
       <linearGradient id="mouth37_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2081,11 +2065,11 @@
 
 <!-- 38 -->
 <div class="shopCard" data-index="37" title="Foso 38: Hurricane 🌪️ (200Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-37">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g38_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth38_shop)"/>
     <defs>
-      <linearGradient id="g38_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bdc3c7"/><stop offset="100%" stop-color="#2c3e50"/></linearGradient>
+      <linearGradient id="g38_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#778899"/><stop offset="100%" stop-color="#2F4F4F"/></linearGradient>
       <linearGradient id="mouth38_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2095,11 +2079,11 @@
 
 <!-- 39 -->
 <div class="shopCard" data-index="38" title="Foso 39: Supernova 🌟 (600Qi ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-38">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g39_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth39_shop)"/>
     <defs>
-      <linearGradient id="g39_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fffc00"/><stop offset="100%" stop-color="#ffffff"/></linearGradient>
+      <linearGradient id="g39_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFF00"/><stop offset="100%" stop-color="#FFD700"/></linearGradient>
       <linearGradient id="mouth39_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2109,11 +2093,11 @@
 
 <!-- 40 -->
 <div class="shopCard" data-index="39" title="Foso 40: Black Hole ⚫ (2Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-39">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g40_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth40_shop)"/>
     <defs>
-      <linearGradient id="g40_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000000"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="g40_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1C1C1C"/><stop offset="100%" stop-color="#000000"/></linearGradient>
       <linearGradient id="mouth40_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2123,11 +2107,11 @@
 
 <!-- 41 -->
 <div class="shopCard" data-index="40" title="Foso 41: Nebula ☁️ (6Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-40">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g41_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth41_shop)"/>
     <defs>
-      <linearGradient id="g41_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#da4453"/><stop offset="100%" stop-color="#89216b"/></linearGradient>
+      <linearGradient id="g41_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4B0082"/><stop offset="100%" stop-color="#8A2BE2"/></linearGradient>
       <linearGradient id="mouth41_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2137,11 +2121,11 @@
 
 <!-- 42 -->
 <div class="shopCard" data-index="41" title="Foso 42: Quasar 💫 (20Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-41">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g42_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth42_shop)"/>
     <defs>
-      <linearGradient id="g42_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1fa2ff"/><stop offset="100%" stop-color="#12d8fa"/></linearGradient>
+      <linearGradient id="g42_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00FFFF"/><stop offset="100%" stop-color="#00BFFF"/></linearGradient>
       <linearGradient id="mouth42_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2151,11 +2135,11 @@
 
 <!-- 43 -->
 <div class="shopCard" data-index="42" title="Foso 43: Pulsar 🎇 (60Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-42">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g43_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth43_shop)"/>
     <defs>
-      <linearGradient id="g43_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a0e7e5"/><stop offset="100%" stop-color="#ffa8b6"/></linearGradient>
+      <linearGradient id="g43_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFB6C1"/><stop offset="100%" stop-color="#FF69B4"/></linearGradient>
       <linearGradient id="mouth43_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2165,11 +2149,11 @@
 
 <!-- 44 -->
 <div class="shopCard" data-index="43" title="Foso 44: Magnetar 🧲 (200Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-43">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g44_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth44_shop)"/>
     <defs>
-      <linearGradient id="g44_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff00cc"/><stop offset="100%" stop-color="#333399"/></linearGradient>
+      <linearGradient id="g44_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF00FF"/><stop offset="100%" stop-color="#800080"/></linearGradient>
       <linearGradient id="mouth44_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
@@ -2179,16 +2163,30 @@
 
 <!-- 45 -->
 <div class="shopCard" data-index="44" title="Foso 45: The Singularity ✨ (600Sx ΣC)">
-  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-44">
     <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g45_shop)"/>
     <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth45_shop)"/>
     <defs>
-      <linearGradient id="g45_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="g45_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#000000"/></linearGradient>
       <linearGradient id="mouth45_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
     </defs>
   </svg>
   <div style="font-weight:700" data-lang="foso_44_name">Foso 45: The Singularity ✨</div>
   <div class="priceTag" data-cost="600000000000000000000000">600Sx ΣC</div>
+</div>
+
+<!-- Foso Pollo (Exclusivo Ruleta) -->
+<div class="shopCard" data-index="45" title="Foso Pollo 🍗 (Exclusivo de la Ruleta)" style="display: none;">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-45">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g46_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth46_shop)"/>
+    <defs>
+      <linearGradient id="g46_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ADFF2F"/><stop offset="100%" stop-color="#006400"/></linearGradient>
+      <linearGradient id="mouth46_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#444"/><stop offset="100%" stop-color="#111"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_45_name">Foso Pollo 🍗</div>
+  <div class="priceTag" data-cost="Infinity">Ruleta</div>
 </div>
 
 <!-- --- SECCION: Sabores Especiales (Consumibles) --- -->
@@ -2590,6 +2588,7 @@
                 upgrade_efficiency: "Eficiencia de Clic",
                 upgrade_combo: "Combo Extendido",
                 upgrade_liquid_luck: "Suerte de Líquido",
+                upgrade_autorecharge: "Auto-Recarga",
                 follow_us: "Síguenos:",
                 footer_credits: "Maqueta funcional — HTML/CSS/JS puro. Guardado automático en localStorage.",
                 settings_title: "Configuración",
@@ -2691,6 +2690,7 @@
                 upgrade_efficiency: "Click Efficiency",
                 upgrade_combo: "Combo Extension",
                 upgrade_liquid_luck: "Liquid Luck",
+                upgrade_autorecharge: "Auto-Recharge",
                 follow_us: "Follow us:",
                 footer_credits: "Functional prototype — Pure HTML/CSS/JS. Autosave to localStorage.",
                 settings_title: "⚙️ Settings",
@@ -2769,7 +2769,7 @@
             perClick: 100
         }, {
             id: 7,
-            name: 'Foso 7',
+            name: 'Foso 7: Peach Mango 🍑🥭',
             cost: 200000, background: 'radial-gradient(ellipse at bottom, #5c0000 0%, #240000 100%)',
             perClick: 150
         }, {
@@ -2805,12 +2805,12 @@
         
         }, {
             id: 14,
-            name: 'Foso 14',
+            name: 'Foso 14: Cotton Candy 🍭',
             cost: 3e9, background: 'radial-gradient(ellipse at bottom, #2b404d 0%, #11191f 100%)',
             perClick: 5000
         }, {
             id: 15,
-            name: 'Foso 15',
+            name: 'Foso 15: Black Diamond Reserve 💎🔥',
             cost: 1e10, background: 'radial-gradient(ellipse at bottom, #000 0%, #222 100%)',
             perClick: 10000
         }, {
@@ -2821,148 +2821,155 @@
         }, {
             id: 17,
             name: 'Foso 17',
-            cost: 1.5e11, background: 'radial-gradient(ellipse at bottom, #6b4f00 0%, #332600 100%)',
+            cost: 1.2e11, background: 'radial-gradient(ellipse at bottom, #6b4f00 0%, #332600 100%)',
             perClick: 35000
         }, {
             id: 18,
             name: 'Foso 18',
-            cost: 6e11, background: 'radial-gradient(ellipse at bottom, #004d66 0%, #00202b 100%)',
+            cost: 5e11, background: 'radial-gradient(ellipse at bottom, #004d66 0%, #00202b 100%)',
             perClick: 50000
         }, {
             id: 19,
             name: 'Foso 19',
-            cost: 2e12, background: 'radial-gradient(ellipse at bottom, #6b0b08 0%, #330504 100%)',
+            cost: 1.8e12, background: 'radial-gradient(ellipse at bottom, #6b0b08 0%, #330504 100%)',
             perClick: 100000
         }, {
             id: 20,
             name: 'Foso 20',
-            cost: 8e12, background: 'radial-gradient(ellipse at bottom, #005c30 0%, #002915 100%)',
+            cost: 7e12, background: 'radial-gradient(ellipse at bottom, #005c30 0%, #002915 100%)',
             perClick: 125000
         }, {
             id: 21,
             name: 'Foso 21',
-            cost: 3e13, background: 'radial-gradient(ellipse at bottom, #07285c 0%, #031129 100%)',
+            cost: 2.5e13, background: 'radial-gradient(ellipse at bottom, #07285c 0%, #031129 100%)',
             perClick: 150000
         }, {
             id: 22,
             name: 'Foso 22',
-            cost: 1e14, background: 'radial-gradient(ellipse at bottom, #4d3366 0%, #21152b 100%)',
+            cost: 9e13, background: 'radial-gradient(ellipse at bottom, #4d3366 0%, #21152b 100%)',
             perClick: 200000
         }, {
             id: 23,
             name: 'Foso 23',
-            cost: 4e14, background: 'radial-gradient(ellipse at bottom, #80643d 0%, #332818 100%)',
+            cost: 3.5e14, background: 'radial-gradient(ellipse at bottom, #80643d 0%, #332818 100%)',
             perClick: 350000
         }, {
             id: 24,
             name: 'Foso 24',
-            cost: 1.5e15, background: 'radial-gradient(ellipse at bottom, #1a1a1a 0%, #000 100%)',
+            cost: 1.2e15, background: 'radial-gradient(ellipse at bottom, #1a1a1a 0%, #000 100%)',
             perClick: 500000
         }, {
             id: 25,
             name: 'Foso 25',
-            cost: 6e15, background: 'radial-gradient(ellipse at bottom, #757575 0%, #e0e0e0 100%)',
+            cost: 5e15, background: 'radial-gradient(ellipse at bottom, #757575 0%, #e0e0e0 100%)',
             perClick: 750000
         }, {
             id: 26,
             name: 'Foso 26',
-            cost: 2e16, background: 'radial-gradient(ellipse at bottom, #802700 0%, #ff4e00 100%)',
-            perClick: 7.5e14
+            cost: 1.8e16, background: 'radial-gradient(ellipse at bottom, #802700 0%, #ff4e00 100%)',
+            perClick: 1000000
         }, {
             id: 27,
             name: 'Foso 27',
-            cost: 8e16, background: 'radial-gradient(ellipse at bottom, #687680 0%, #cfdef3 100%)',
-            perClick: 1000000
+            cost: 7e16, background: 'radial-gradient(ellipse at bottom, #687680 0%, #cfdef3 100%)',
+            perClick: 1250000
         }, {
             id: 28,
             name: 'Foso 28',
-            cost: 3e17, background: 'radial-gradient(ellipse at bottom, #566b00 0%, #add100 100%)',
-            perClick: 1250000
+            cost: 2.5e17, background: 'radial-gradient(ellipse at bottom, #566b00 0%, #add100 100%)',
+            perClick: 1500000
         }, {
             id: 29,
             name: 'Foso 29',
-            cost: 1e18, background: 'radial-gradient(ellipse at bottom, #754802 0%, #ed8f03 100%)',
-            perClick: 1500000
+            cost: 9e17, background: 'radial-gradient(ellipse at bottom, #754802 0%, #ed8f03 100%)',
+            perClick: 2000000
         }, {
             id: 30,
             name: 'Foso 30',
-            cost: 4e18, background: 'radial-gradient(ellipse at bottom, #00656b 0%, #00f2ff 100%)',
-            perClick: 2000000
+            cost: 3.5e18, background: 'radial-gradient(ellipse at bottom, #00656b 0%, #00f2ff 100%)',
+            perClick: 3000000
         }, {
             id: 31,
             name: 'Foso 31',
-            cost: 1.5e19, background: 'radial-gradient(ellipse at bottom, #3d2e1e 0%, #7a5c3c 100%)',
-            perClick: 3000000
+            cost: 1.2e19, background: 'radial-gradient(ellipse at bottom, #3d2e1e 0%, #7a5c3c 100%)',
+            perClick: 4000000
         }, {
             id: 32,
             name: 'Foso 32',
-            cost: 6e19, background: 'radial-gradient(ellipse at bottom, #161f28 0%, #fd746c 100%)',
-            perClick: 4000000
+            cost: 5e19, background: 'radial-gradient(ellipse at bottom, #161f28 0%, #fd746c 100%)',
+            perClick: 5000000
         }, {
             id: 33,
             name: 'Foso 33',
-            cost: 2e20, background: 'radial-gradient(ellipse at bottom, #000000 0%, #222222 100%)',
-            perClick: 5000000
+            cost: 1.8e20, background: 'radial-gradient(ellipse at bottom, #000000 0%, #222222 100%)',
+            perClick: 6000000
         }, {
             id: 34,
             name: 'Foso 34',
-            cost: 8e20, background: 'radial-gradient(ellipse at bottom, #606060 0%, #ffffff 100%)',
-            perClick: 6000000
+            cost: 7e20, background: 'radial-gradient(ellipse at bottom, #606060 0%, #ffffff 100%)',
+            perClick: 7000000
         }, {
             id: 35,
             name: 'Foso 35',
-            cost: 3e21, background: 'radial-gradient(ellipse at bottom, #802136 0%, #ff4b2b 100%)',
-            perClick: 7000000
+            cost: 2.5e21, background: 'radial-gradient(ellipse at bottom, #802136 0%, #ff4b2b 100%)',
+            perClick: 8000000
         }, {
             id: 36,
             name: 'Foso 36',
-            cost: 1e22, background: 'radial-gradient(ellipse at bottom, #000023 0%, #1cb5e0 100%)',
-            perClick: 8000000
+            cost: 9e21, background: 'radial-gradient(ellipse at bottom, #000023 0%, #1cb5e0 100%)',
+            perClick: 9000000
         }, {
             id: 37,
             name: 'Foso 37',
-            cost: 4e22, background: 'radial-gradient(ellipse at bottom, #2d1c0b 0%, #5a3815 100%)',
-            perClick: 9000000
+            cost: 3.5e22, background: 'radial-gradient(ellipse at bottom, #2d1c0b 0%, #5a3815 100%)',
+            perClick: 10000000
         }, {
             id: 38,
             name: 'Foso 38',
-            cost: 1.5e23, background: 'radial-gradient(ellipse at bottom, #161f28 0%, #bdc3c7 100%)',
-            perClick: 10000000
+            cost: 1.2e23, background: 'radial-gradient(ellipse at bottom, #161f28 0%, #bdc3c7 100%)',
+            perClick: 12500000
         }, {
             id: 39,
             name: 'Foso 39',
-            cost: 6e23, background: 'radial-gradient(ellipse at bottom, #807e00 0%, #fffc00 100%)',
-            perClick: 12500000
+            cost: 5e23, background: 'radial-gradient(ellipse at bottom, #807e00 0%, #fffc00 100%)',
+            perClick: 15000000
         }, {
             id: 40,
             name: 'Foso 40',
-            cost: 2e24, background: 'radial-gradient(ellipse at bottom, #000000 0%, #000000 100%)',
-            perClick: 15000000
+            cost: 1.8e24, background: 'radial-gradient(ellipse at bottom, #000000 0%, #000000 100%)',
+            perClick: 20000000
         }, {
             id: 41,
             name: 'Foso 41',
-            cost: 8e24, background: 'radial-gradient(ellipse at bottom, #451136 0%, #da4453 100%)',
-            perClick: 20000000
+            cost: 7e24, background: 'radial-gradient(ellipse at bottom, #451136 0%, #da4453 100%)',
+            perClick: 30000000
         }, {
             id: 42,
             name: 'Foso 42',
-            cost: 3e25, background: 'radial-gradient(ellipse at bottom, #096a7d 0%, #12d8fa 100%)',
-            perClick: 30000000
+            cost: 2.5e25, background: 'radial-gradient(ellipse at bottom, #096a7d 0%, #12d8fa 100%)',
+            perClick: 40000000
         }, {
             id: 43,
             name: 'Foso 43',
-            cost: 1e26, background: 'radial-gradient(ellipse at bottom, #80545b 0%, #ffa8b6 100%)',
-            perClick: 40000000
+            cost: 9e25, background: 'radial-gradient(ellipse at bottom, #80545b 0%, #ffa8b6 100%)',
+            perClick: 50000000
         }, {
             id: 44,
             name: 'Foso 44',
-            cost: 4e26, background: 'radial-gradient(ellipse at bottom, #1a1a4d 0%, #ff00cc 100%)',
-            perClick: 50000000
+            cost: 3.5e26, background: 'radial-gradient(ellipse at bottom, #1a1a4d 0%, #ff00cc 100%)',
+            perClick: 60000000
         }, {
             id: 45,
             name: 'Foso 45',
-            cost: 1e27, background: 'radial-gradient(ellipse at bottom, #000000 0%, #ffffff 100%)',
-            perClick: 60000000
+            cost: 9e26, background: 'radial-gradient(ellipse at bottom, #000000 0%, #ffffff 100%)',
+            perClick: 70000000
+        }, {
+            id: 46,
+            name: 'Foso Pollo 🍗',
+            cost: Infinity,
+            background: 'radial-gradient(ellipse at bottom, #228b22 0%, #006400 100%)',
+            perClick: 75000000,
+            exclusive: true
         }];
 
         const GEM_FOSOS = Array.from({ length: 30 }, (_, i) => ({
@@ -3075,6 +3082,14 @@
             { cost: 100000, chance: 0.01 }, // +1%
             { cost: 500000, chance: 0.02 },
             { cost: 2500000, chance: 0.03 },
+        ];
+
+        const AUTORECHARGE_UPGRADES = [
+            { cost: 75000, recharge: 0.1 },
+            { cost: 300000, recharge: 0.2 },
+            { cost: 1500000, recharge: 0.3 },
+            { cost: 7000000, recharge: 0.4 },
+            { cost: 30000000, recharge: 0.5 },
         ];
 
         const AFK_UPGRADES = [
@@ -3210,6 +3225,22 @@
                     showToast("x3 Clics ha terminado.", "info");
                 }, 30000);
             }},
+            { label: "Foso Pollo 🍗", reward: (s) => {
+                const fosoIndex = 45; // El índice del Foso Pollo
+                if (s.fososOwned.includes(fosoIndex)) {
+                    const consolationPrize = 100000;
+                    s.sig += consolationPrize;
+                    // Mostrar el foso pollo en la tienda si ya se tiene
+                    const fosoPolloCard = document.querySelector('.shopCard[data-index="45"]');
+                    if (fosoPolloCard) {
+                        fosoPolloCard.style.display = 'flex';
+                    }
+                    showToast(`Ya tienes el Foso Pollo. ¡Toma ${formatNum(consolationPrize)} ΣC en su lugar!`, "info");
+                } else {
+                    s.fososOwned.push(fosoIndex);
+                    showToast("¡Has ganado el exclusivo Foso Pollo 🍗!", "success", 5000);
+                }
+            }},
         ];
 
         const RANKS = [
@@ -3298,6 +3329,7 @@
                 critical: 0,
                 combo: 0,
                 liquid_luck: 0,
+                autorecharge: 0,
             },
             extraClicks: 0,
             combo: {
@@ -3768,6 +3800,12 @@
                 if (state.upgradeLevels.liquid_luck === undefined) {
                     state.upgradeLevels.liquid_luck = 0;
                 }
+                if (state.upgradeLevels.autorecharge === undefined) {
+                    state.upgradeLevels.autorecharge = 0;
+                }
+                if (state.upgradeLevels.autorecharge === undefined) {
+                    state.upgradeLevels.autorecharge = 0;
+                }
                 if (state.upgradeLevels.autoclicker === undefined) {
                     state.upgradeLevels.critical = 0;
                 }
@@ -3842,6 +3880,12 @@
             const lang = state.lang || 'es';
             sigTotalEl.textContent = formatNum(state.sig);
             if(shopSigma) shopSigma.textContent = formatNum(state.sig);
+
+            const fosoPolloCard = document.querySelector('.shopCard[data-index="45"]');
+            if (fosoPolloCard) {
+                fosoPolloCard.style.display = state.fososOwned.includes(45) ? 'flex' : 'none';
+            }
+
             if(shopGems) shopGems.textContent = formatNum(state.gems);
 
             // Mostrar/ocultar botón de prestigio
@@ -3989,6 +4033,7 @@
                 critical: { upgrades: CRITICAL_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z"/></svg>', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
                 efficiency: { upgrades: EFFICIENCY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"/></svg>', desc: 'Reduce el consumo de batería por clic.' },
                 combo: { upgrades: COMBO_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2 L4 14h6l-1 8 10-12h-7z"/></svg>', desc: 'Aumenta el tiempo para mantener el combo.' },
+                autorecharge: { upgrades: AUTORECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14h-3v3l4-4-4-4v3H7v-2h3V8l-4 4 4 4v-3h5v2z" fill="currentColor"/></svg>', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
                 liquid_luck: { upgrades: LIQUID_LUCK_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
             };
 
@@ -4207,6 +4252,13 @@
                     finalDrain *= (1 - state.activeCraftedFlavor.bonus.value); // 50% less drain means multiply by 0.5
                 }
                 state.battery = Math.max(0, state.battery - finalDrain);
+            }
+            
+            // Auto-recharge per click
+            const rechargeLevel = state.upgradeLevels.autorecharge || 0;
+            if (rechargeLevel > 0) {
+                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge;
+                state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
             }
 
             // The click handler can be called by the autoclicker with a null event
@@ -5721,7 +5773,7 @@
                         if (state.sig >= cost) {
                             state.sig -= cost;
                             state.upgradeLevels[upgradeType]++;
-                            if (upgradeType === 'battery') state.maxBattery = upgrades[level].capacity;
+                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
                             if (upgradeType === 'autorecharge') updateAutoRechargeLoop();
                             playSound('buySfx');
@@ -6465,7 +6517,7 @@
                     if (!button) return;
 
                     const upgradeType = button.dataset.upgrade;
-                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES };
+                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES, autorecharge: AUTORECHARGE_UPGRADES };
                     const upgrades = allUpgrades[upgradeType];
                     const level = state.upgradeLevels[upgradeType] || 0;
 
