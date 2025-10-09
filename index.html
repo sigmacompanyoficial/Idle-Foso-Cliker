@@ -101,6 +101,10 @@
   .mata-btn:hover{transform:translateY(-1px);background: #1e293b; box-shadow: 0 0 15px -2px var(--accent), 0 4px 10px rgba(0,0,0,0.3);}
   .mata-btn:active{transform:translateY(0)}
   .mata-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .mata-btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
   .mata-btn[disabled]{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;background: #0f172a; color: var(--muted);}
   .icon-16{width:16px;height:16px}
   .icon-20{width:20px;height:20px}
@@ -123,10 +127,14 @@
     list-style: none; padding: 0; margin: 0; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; min-height: 50px;
   }
   #mensajes li {
-    max-width: 80%; padding: 6px 10px; border-radius: 12px; position: relative; word-wrap: break-word; font-size: 13px; line-height: 1.3;
+    max-width: 85%; padding: 6px 10px; border-radius: 12px; position: relative; word-wrap: break-word; font-size: 13px; line-height: 1.3;
+    transition: transform 0.2s ease-out;
+    animation: slideInMessage 0.3s ease-out forwards;
   }
+  @keyframes slideInMessage { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
   #mensajes li .hora {
-    font-size: 10px; color: var(--muted); display: block; text-align: right; margin-top: 4px;
+    font-size: 10px; color: var(--muted); display: inline-block; margin-left: 8px; user-select: none;
   }
   #mensajes li.mio {
     background: #1a3a5a; align-self: flex-end; border-bottom-right-radius: 4px;
@@ -150,6 +158,35 @@
     color: inherit;
     text-shadow: 0 1px 1px rgba(255,255,255,0.2);
   }
+  .message-content { display: flex; align-items: flex-end; }
+  .message-text { flex-grow: 1; }
+  .edited-indicator { font-size: 10px; color: var(--muted); margin-left: 5px; font-style: italic; }
+
+  /* Chat Reactions */
+  .reactions-container { display: flex; gap: 4px; margin-top: 4px; }
+  .reaction { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
+  .reaction.reacted { background: var(--accent); color: var(--bg); }
+  .emoji-picker {
+    position: absolute;
+    background: var(--panel);
+    border: 1px solid var(--muted);
+    border-radius: 8px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    bottom: 100%;
+    right: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+  }
+  li:hover .emoji-picker { opacity: 1; visibility: visible; }
+  .emoji-picker span { cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; }
+  .emoji-picker span:hover { background: rgba(255,255,255,0.1); }
+  .message-body { position: relative; }
+  .message-body:hover .react-btn { opacity: 1; }
+  .react-btn { position: absolute; top: 0; right: 0; transform: translateY(-100%) translateX(10px); opacity: 0; transition: opacity 0.2s; }
   .input-area { display: flex; margin-top: 10px; gap: 8px; }
   #replyingTo {
     background: rgba(0,0,0,0.2);
@@ -238,10 +275,11 @@
   .modal { position: fixed; inset:0; display:flex; justify-content:center; align-items:center; z-index:9999; background: rgba(3,10,20,0.65); backdrop-filter: blur(6px); }
   .modal.hidden { display:none; }
   .modal-content { /* Modal estilo "Senior" */
-    position: relative; background: var(--panel);
+    position: relative; background: var(--panel); transition: transform 0.3s ease, opacity 0.3s ease;
     border: 1px solid rgba(100, 116, 139, 0.5);
     border-top: 3px solid var(--accent);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.55); animation: modalIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    animation: modalIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     border-radius: 16px;
     padding: 18px 18px 14px; width: min(94%, 980px); max-height: 84vh; overflow: hidden; color: #e7edf6;
   }
@@ -251,6 +289,10 @@
   .close-btn:hover { background:rgba(255,255,255,0.08); color:#fff; }
   .modal-body { overflow:auto; max-height: calc(84vh - 56px); padding-top:12px; }
   @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal.closing .modal-content {
+    animation: modalOut 0.3s ease forwards;
+  }
+  @keyframes modalOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
 .powers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -360,6 +402,18 @@
   animation: floatUp 1s ease-out forwards;
   white-space: nowrap; /* Evita que el texto se parta */
 }
+
+/* Click Ripple Animation */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.5);
+  transform: scale(0);
+  animation: ripple-effect 0.6s ease-out;
+  pointer-events: none;
+}
+@keyframes ripple-effect { to { transform: scale(4); opacity: 0; } }
+
 
 .notify-dot {
   position: absolute;
@@ -951,7 +1005,7 @@
 <script type="module">
   // ----- IMPORTS de Firebase (modular) -----
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, get, child, push, onChildAdded, remove, query, limitToFirst } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+    import { getDatabase, ref, set, update, onValue, get, child, push, onChildAdded, onChildChanged, remove, query, limitToFirst } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
   // ----- CONFIG: reemplaza esto con tu firebaseConfig real -----
   const firebaseConfig = {
@@ -1010,11 +1064,17 @@
   let replyingTo = null;
 
   // Guarda los datos del jugador en Realtime DB
-  function savePlayerData(nombre, clicks, dinero, isAutoSave = false) {
-    if (!db) return;
-    const savedName = localStorage.getItem('playerName');
-    if (!savedName && isAutoSave) return; // No auto-guardar si no hay nombre registrado
-    const key = sanitizeKey(savedName || localPlayerId);
+  function savePlayerData(nombre, clicks, dinero, isAutoSave = false, oldNameToDelete = null) {
+    if (!db || !nombre) return;
+    if (!localStorage.getItem('playerName') && isAutoSave) return; // No auto-guardar si no hay nombre registrado
+
+    // Si se está cambiando el nombre, borrar el antiguo.
+    // oldNameToDelete es el nombre que estaba antes en localStorage o el ID de jugador temporal.
+    if (oldNameToDelete && oldNameToDelete !== nombre) {
+        remove(ref(db, 'players/' + sanitizeKey(oldNameToDelete))).catch(err => console.error("Error deleting old player data:", err));
+    }
+
+    const key = sanitizeKey(nombre);
     set(ref(db, 'players/' + key), {
       name: nombre,
       clicks: Number(clicks) || 0,
@@ -1155,7 +1215,7 @@
   function startAutoSave() {
     stopAutoSave();
     autoSaveTimer = setInterval(() => {
-      const name = playerNameInput.value;
+      const name = localStorage.getItem('playerName') || localPlayerId; // Usar siempre el nombre guardado para el auto-save
       const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
       const dinero = window.gameState ? window.gameState.sig : 0;
       savePlayerData(name, clicks, dinero, true); // isAutoSave = true
@@ -1170,30 +1230,37 @@
 
   // Botones UI
   btnSaveNow.addEventListener("click", async () => {
-    const name = playerNameInput.value;
-    if (!name || name.trim() === "" || name === "Jugador") {
+    const newName = playerNameInput.value.trim();
+    if (!newName || newName.startsWith("Jugador#")) {
         registerPrompt.style.display = 'block';
         showToast("Por favor, introduce un nombre válido.", "error");
         return;
     }
 
+    const oldName = localStorage.getItem('playerName') || localPlayerId;
+
     // Comprobar si el nombre ya existe
-    const key = sanitizeKey(name);
-    const playerRef = ref(db, 'players/' + key);
-    const snapshot = await get(playerRef);
+    const playersSnapshot = await get(ref(db, 'players'));
+    const playersData = playersSnapshot.val() || {};
+    const existingPlayer = Object.values(playersData).find(p => p.name.toLowerCase() === newName.toLowerCase());
 
-    const oldName = localStorage.getItem('playerName');
-
-    if (snapshot.exists() && name !== oldName) {
-        showToast("Ese nombre ya está en uso. Elige otro.", "error");
+    if (existingPlayer && existingPlayer.name !== oldName) {
+        showToast(`El nombre "${newName}" ya está en uso. Elige otro.`, "error");
     } else {
         // Guardar el nombre localmente
-        localStorage.setItem('playerName', name);
+        localStorage.setItem('playerName', newName);
+        // Si el nombre es nuevo, actualizamos el localPlayerId para futuras sesiones si no se guarda un nombre.
+        if (newName !== oldName) {
+            localPlayerId = newName;
+            localStorage.setItem('localPlayerId', localPlayerId);
+        }
+
         registerPrompt.style.display = 'none';
 
         const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
         const dinero = window.gameState ? window.gameState.sig : 0;
-        savePlayerData(name, clicks, dinero);
+        // Pasamos el nombre antiguo para que sea borrado si es diferente
+        savePlayerData(newName, clicks, dinero, false, oldName);
         refreshPanelFromGameUI();
         btnSaveNow.innerText = "Guardado ✓";
         setTimeout(()=> btnSaveNow.innerText = "Guardar", 900);
@@ -1227,8 +1294,9 @@
   // On start: suscribirse y arrancar auto-save
   (function initRankingModule(){
     refreshPanelFromGameUI();
-    const savedName = localStorage.getItem('playerName');
+    localPlayerId = localStorage.getItem('localPlayerId') || `Jugador#${Math.floor(1000 + Math.random() * 9000)}`;
     localStorage.setItem('localPlayerId', localPlayerId);
+    const savedName = localStorage.getItem('playerName');
     if (savedName) {
         playerNameInput.value = savedName;
     } else {
@@ -1245,7 +1313,7 @@
     // Guardar antes de cerrar (último intento)
     window.addEventListener("beforeunload", () => {
       if (!db) return;
-      const name = playerNameInput.value;
+      const name = localStorage.getItem('playerName') || localPlayerId;
       const clicks = totalClicksEl ? parseInt(totalClicksEl.innerText.replace(/,/g, ''), 10) || 0 : 0;
       const dinero = window.gameState ? window.gameState.sig : 0;
       try { savePlayerData(name, clicks, dinero); } catch(e){}
@@ -1257,6 +1325,7 @@
     // ----- CHAT LOGIC -----
     const chatRef = ref(db, "chat");
 
+
     // Mostrar mensajes nuevos
     onChildAdded(chatRef, (snap) => {
       if (!chatLista) return;
@@ -1265,34 +1334,14 @@
       const hora = new Date(data.hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       
       const miNombre = playerNameInput.value || localPlayerId;
+      const isMyMessage = data.nombre === miNombre;
 
-      let replyHtml = '';
-      if (data.replyTo) {
-        replyHtml = `
-          <div style="background:rgba(0,0,0,0.15); padding: 4px 8px; border-radius:6px; margin-bottom:4px; font-size:11px; border-left: 2px solid #64748b;">
-            <strong>${escapeHtml(data.replyTo.nombre)}</strong>
-            <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #bdc3c7;">${escapeHtml(data.replyTo.texto)}</div>
-          </div>
-        `;
-      }
-
-      li.innerHTML = `${replyHtml}<span><strong>${escapeHtml(data.nombre)}:</strong> ${escapeHtml(data.texto)}</span><span class="hora">${hora}</span>`;
+      // Rellenar el contenido del mensaje
+      li.innerHTML = buildMessageHTML(data, miNombre);
       
-      // Asignar clases de ranking
-      const playerRankIndex = rankedPlayers.findIndex(p => p.name === data.nombre);
-      const rankClasses = {
-        0: 'rank-gold',
-        1: 'rank-silver',
-        2: 'rank-bronze'
-      };
+      // Asignar clases de ranking y tipo de mensaje
+      assignMessageClasses(li, data, miNombre);
 
-      if (data.nombre.toLowerCase() === 'ceo') {
-        li.classList.add('rank-diamond');
-      } else if (playerRankIndex !== -1 && rankClasses[playerRankIndex]) {
-        li.classList.add(rankClasses[playerRankIndex]);
-      } else {
-        li.className = data.nombre === miNombre ? 'mio' : 'otro';
-      }
       li.id = snap.key;
 
       // Añadir listener para responder
@@ -1301,10 +1350,96 @@
         renderReplyingTo();
       });
 
+      // Añadir listener para editar (si es mi mensaje)
+      if (isMyMessage) {
+        li.addEventListener('dblclick', () => editMessage(snap.key, li));
+      }
+
+      // Listeners para reacciones
+      li.querySelectorAll('.reaction, .emoji-picker span').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation(); // Evitar que se active el "responder"
+          toggleReaction(snap.key, el.dataset.emoji);
+        });
+      });
+
       chatLista.appendChild(li);
       chatLista.scrollTop = chatLista.scrollHeight; // scroll automático
     });
 
+    // Actualizar mensajes existentes (para reacciones, ediciones, etc.)
+    onChildChanged(chatRef, (snap) => {
+        const messageId = snap.key;
+        const data = snap.val();
+        const li = document.getElementById(messageId);
+        if (li) {
+            const miNombre = playerNameInput.value || localPlayerId;
+            const isMyMessage = data.nombre === miNombre;
+
+            // Guardar el estado del scroll
+            const isScrolledToBottom = chatLista.scrollHeight - chatLista.clientHeight <= chatLista.scrollTop + 1;
+
+            // Actualizar el contenido del mensaje
+            li.innerHTML = buildMessageHTML(data, miNombre);
+            
+            // Re-asignar clases por si el ranking del jugador ha cambiado
+            assignMessageClasses(li, data, miNombre);
+
+            // Re-adjuntar los listeners
+            li.addEventListener('click', () => {
+                replyingTo = { id: snap.key, nombre: data.nombre, texto: data.texto };
+                renderReplyingTo();
+            });
+
+            if (isMyMessage) {
+                li.addEventListener('dblclick', () => editMessage(snap.key, li));
+            }
+
+            li.querySelectorAll('.reaction, .emoji-picker span').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleReaction(snap.key, el.dataset.emoji);
+                });
+            });
+
+            // Restaurar el scroll si estaba al final
+            if (isScrolledToBottom) {
+                chatLista.scrollTop = chatLista.scrollHeight;
+            }
+        }
+    });
+
+    function buildMessageHTML(data, miNombre) {
+        const hora = new Date(data.hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        let replyHtml = '';
+        if (data.replyTo) {
+            replyHtml = `<div style="background:rgba(0,0,0,0.15); padding: 4px 8px; border-radius:6px; margin-bottom:4px; font-size:11px; border-left: 2px solid #64748b;"><strong>${escapeHtml(data.replyTo.nombre)}:</strong><div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #bdc3c7;">${escapeHtml(data.replyTo.texto)}</div></div>`;
+        }
+
+        let reactionsHtml = '<div class="reactions-container">';
+        if (data.reactions) {
+            for (const emoji in data.reactions) {
+                const userList = data.reactions[emoji];
+                const count = userList.length;
+                const reactedClass = userList.includes(miNombre) ? 'reacted' : '';
+                reactionsHtml += `<div class="reaction ${reactedClass}" data-emoji="${emoji}">${emoji} ${count}</div>`;
+            }
+        }
+        reactionsHtml += '</div>';
+
+        const emojiPickerHtml = `<div class="emoji-picker"><span data-emoji="👍">👍</span><span data-emoji="❤️">❤️</span><span data-emoji="😂">😂</span><span data-emoji="😮">😮</span><span data-emoji="😢">😢</span><span data-emoji="🤔">🤔</span></div>`;
+
+        return `<div class="message-body">${replyHtml}<div class="message-content"><span class="message-text"><strong>${escapeHtml(data.nombre)}:</strong> ${escapeHtml(data.texto)}</span><span class="hora">${hora}${data.edited ? ' (editado)' : ''}</span></div>${reactionsHtml}${emojiPickerHtml}</div>`;
+    }
+
+    function assignMessageClasses(li, data, miNombre) {
+        const playerRankIndex = rankedPlayers.findIndex(p => p.name === data.nombre);
+        const rankClasses = { 0: 'rank-gold', 1: 'rank-silver', 2: 'rank-bronze' };
+        li.className = ''; // Limpiar clases antiguas
+        if (data.nombre.toLowerCase() === 'ceo') li.classList.add('rank-diamond');
+        else if (playerRankIndex !== -1 && rankClasses[playerRankIndex]) li.classList.add(rankClasses[playerRankIndex]);
+        else li.classList.add(data.nombre === miNombre ? 'mio' : 'otro');
+    }
 
     // Borrar mensajes viejos para mantener la base de datos limpia
     const borrarMensajeViejo = async () => {
@@ -1326,7 +1461,8 @@
       const messageData = {
         nombre: miNombre,
         texto: texto,
-        hora: Date.now()
+        hora: Date.now(),
+        reactions: {}
       };
 
       if (replyingTo) {
@@ -1338,6 +1474,54 @@
       replyingTo = null;
       renderReplyingTo();
       borrarMensajeViejo();
+    };
+
+    const toggleReaction = async (messageId, emoji) => {
+      const miNombre = playerNameInput.value || localPlayerId;
+      const reactionRef = ref(db, `chat/${messageId}/reactions/${emoji}`);
+      const snapshot = await get(reactionRef);
+      let users = snapshot.val() || [];
+
+      const updates = {};
+      if (users.includes(miNombre)) {
+        users = users.filter(user => user !== miNombre);
+      } else {
+        users.push(miNombre);
+      }
+
+      updates[`/chat/${messageId}/reactions/${emoji}`] = users.length > 0 ? users : null;
+      await update(ref(db), updates);
+    };
+
+    const editMessage = (messageId, liElement) => {
+      const messageTextSpan = liElement.querySelector('.message-text');
+      if (!messageTextSpan) return;
+
+      const currentText = messageTextSpan.innerText.split(': ')[1];
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentText;
+      input.style.width = '100%';
+
+      messageTextSpan.style.display = 'none';
+      messageTextSpan.parentElement.insertBefore(input, messageTextSpan);
+      input.focus();
+
+      const saveEdit = async () => {
+        const newText = input.value.trim();
+        if (newText && newText !== currentText) {
+          await update(ref(db, `chat/${messageId}`), {
+            texto: newText,
+            edited: true
+          });
+        }
+        // La UI se actualizará sola por el listener `onChildAdded` (que también se dispara en `update`)
+        // pero para evitar duplicados, borramos el elemento viejo y dejamos que Firebase lo re-renderice.
+        liElement.remove();
+      };
+
+      input.addEventListener('blur', saveEdit);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEdit(); });
     };
 
     function renderReplyingTo() {
@@ -1640,6 +1824,10 @@
           <div class="metaTiny" style="text-align: right;">ΣC: <span id="shopSigma">0</span></div>
           <div class="metaTiny" style="text-align: right;">💎: <span id="shopGems">0</span></div>
         </div>
+        <button id="btnExchangeFromShop" class="mata-btn" style="background:#1abc9c; margin-left: auto;">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M16 3.54a2.5 2.5 0 0 1 0 4.92M8 15.54a2.5 2.5 0 0 1 0 4.92m5-13.52L6.5 14.06m11-6.04L9.5 19.56" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span data-lang="exchange">Intercambio</span>
+        </button>
       </div>
 
       <div class="shopGrid" id="shopGrid">
@@ -2312,6 +2500,20 @@
   <div class="priceTag" data-cost="Infinity">Ruleta</div>
 </div>
 
+<!-- Foso Yousef (Exclusivo Ruleta) -->
+<div class="shopCard" data-index="46" title="Foso Yousef 👑 (Exclusivo de la Ruleta)" style="display: none;">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-46">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g47_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth47_shop)"/>
+    <defs>
+      <linearGradient id="g47_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffd700"/><stop offset="100%" stop-color="#f0a500"/></linearGradient>
+      <linearGradient id="mouth47_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a2c00"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_46_name">Foso Yousef 👑</div>
+  <div class="priceTag" data-cost="Infinity">Ruleta</div>
+</div>
+
 <!-- --- SECCION: Sabores Especiales (Consumibles) --- -->
 <div style="grid-column:1/-1; font-weight:800; margin-top:10px; padding-top:8px; border-top:1px solid rgba(46, 204, 113, 0.3)" data-lang="special_flavors">
   <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
@@ -2590,6 +2792,26 @@
     </div>
 </div>
 
+<!-- Modal Intercambio -->
+<div id="exchangeModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title" data-lang="exchange_title"><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M16 3.54a2.5 2.5 0 0 1 0 4.92M8 15.54a2.5 2.5 0 0 1 0 4.92m5-13.52L6.5 14.06m11-6.04L9.5 19.56" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Intercambio de Moneda</div>
+            <button class="close-btn" data-close>&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <p class="hint" data-lang="exchange_desc">Intercambia 30 Sigmacoins (ΣC) por 1 Gema (💎).</p>
+            <div style="display:flex; flex-direction: column; gap:10px; margin-top: 15px; align-items: center;">
+                <input id="exchangeInput" type="number" placeholder="Cantidad de gemas a comprar" data-lang-placeholder="exchange_placeholder" style="padding:10px; border-radius:8px; border:1px solid rgba(100, 116, 139, 0.2); background:rgba(0,0,0,0.12); color:inherit; text-align: center; max-width: 250px;">
+                <p id="exchangeCost" class="metaTiny">Costo: 0 ΣC</p>
+                <button id="exchangeBtn" class="mata-btn" data-lang="exchange_button" style="justify-content: center;">
+                    Intercambiar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toastContainer"></div>
 
@@ -2682,6 +2904,9 @@
                 prestige: "Prestigio",
                 prestige_title: "🌟 Prestigio",
                 prestige_desc: "¡Felicidades! Has llegado al final del camino... por ahora. Hacer Prestigio reiniciará tu progreso (como un Rebirth) pero te otorgará Puntos de Prestigio (PP) para desbloquear mejoras permanentes increíblemente poderosas.",
+                exchange: "Intercambio",
+                exchange_title: "Intercambio de Moneda",
+                exchange_desc: "Intercambia 30 Sigmacoins (ΣC) por 1 Gema (💎).",
                 confirm_prestige: "Confirmar Prestigio",
                 prestige_points: "Puntos de Prestigio",
                 crafting: "Laboratorio",
@@ -2711,6 +2936,8 @@
                 event_infinite_battery: "🔋 ¡Batería Infinita! (No se gasta batería)",
                 event_black_market: "🕵️ ¡Mercado Negro Abierto!",
                 black_market_title: "🕵️ Mercado Negro",
+                exchange_placeholder: "Cantidad de gemas a comprar",
+                exchange_button: "Intercambiar",
                 black_market_desc: "Un vendedor misterioso te ofrece estos tratos... ¡Solo por tiempo limitado!",
                 promo_code_button: "Código Promocional",
                 promo_code_title: "🎁 Código Promocional",
@@ -2815,6 +3042,9 @@
                 event_infinite_battery: "🔋 Infinite Battery! (No battery drain)",
                 event_black_market: "🕵️ Black Market Open!",
                 black_market_title: "🕵️ Black Market",
+                exchange_desc: "Exchange 30 Sigmacoins (ΣC) for 1 Gem (💎).",
+                exchange_placeholder: "Amount of gems to buy",
+                exchange_button: "Exchange",
                 black_market_desc: "A mysterious vendor offers you these deals... For a limited time only!",
                 promo_code_button: "Promo Code",
                 promo_code_title: "🎁 Promo Code",
@@ -3110,11 +3340,18 @@
             cost: 9e26, background: 'radial-gradient(ellipse at bottom, #000000 0%, #ffffff 100%)',
             perClick: 70000000
         }, {
-            id: 46,
+            id: 46, // Corregido el id para que sea 46
             name: 'Foso Pollo 🍗',
             cost: Infinity,
             background: 'radial-gradient(ellipse at bottom, #228b22 0%, #006400 100%)',
             perClick: 75000000,
+            exclusive: true
+        }, {
+            id: 47, // Nuevo Foso Yousef
+            name: 'Foso Yousef 👑',
+            cost: Infinity,
+            background: 'radial-gradient(ellipse at bottom, #ffd700 0%, #f0a500 100%)',
+            perClick: 1000,
             exclusive: true
         }];
 
@@ -3249,7 +3486,7 @@
         const CONFIG = {
             storageKey: 'foso_tycoon_state_v2', // Version bump for new features
             autosaveMs: 10000,
-            uiTickMs: 1000,
+            uiTickMs: 100,
             baseBatteryDrainPerClick: 1,
             overheatCps: 15,
             mataReward: 50,
@@ -3257,7 +3494,7 @@
             eventChance: 0.2, // 20% chance per check
             healthDegradationPerClick: 0.05, // How much health is lost per click
             comboTimeout: 2000, // 2 seconds to continue combo
-            comboMax: 5, // Max combo multiplier
+            comboMax: 10, // Max combo multiplier
             marketUpdateInterval: 5 * 60 * 1000, // 5 minutes
             mataCooldownSec: 300,
             onEquipRefill: 20,
@@ -3371,21 +3608,17 @@
                     showToast("x3 Clics ha terminado.", "info");
                 }, 30000);
             }},
-            { label: "Foso Pollo 🍗", reward: (s) => {
-                const fosoIndex = 45; // El índice del Foso Pollo
+            { label: "Foso Yousef 👑", reward: (s) => {
+                const fosoIndex = 46; // El índice del Foso Yousef
                 if (s.fososOwned.includes(fosoIndex)) {
-                    const consolationPrize = 100000;
+                    const consolationPrize = 500000;
                     s.sig += consolationPrize;
-                    // Mostrar el foso pollo en la tienda si ya se tiene
-                    const fosoPolloCard = document.querySelector('.shopCard[data-index="45"]');
-                    if (fosoPolloCard) {
-                        fosoPolloCard.style.display = 'flex';
-                    }
-                    showToast(`Ya tienes el Foso Pollo. ¡Toma ${formatNum(consolationPrize)} ΣC en su lugar!`, "info");
+                    showToast(`Ya tienes el Foso Yousef. ¡Toma ${formatNum(consolationPrize)} ΣC en su lugar!`, "info");
                 } else {
                     s.fososOwned.push(fosoIndex);
-                    showToast("¡Has ganado el exclusivo Foso Pollo 🍗!", "success", 5000);
+                    showToast("¡Has ganado el exclusivo Foso Yousef 👑!", "success", 5000);
                 }
+                render(); // Actualizar la tienda para mostrarlo
             }},
         ];
 
@@ -3530,6 +3763,7 @@
         const btnPrestige = document.getElementById("btnPrestige");
         const prestigeModal = document.getElementById("prestigeModal");
         const btnCrafting = document.getElementById("btnCrafting"); // No hay modal para esto
+        const btnExchange = document.getElementById("btnExchange");
         const btnPromo = document.getElementById("btnPromo");
         const promoModal = document.getElementById("promoModal");
         const craftingModal = document.getElementById("craftingModal"); // No hay modal para esto
@@ -3598,6 +3832,10 @@
         const blackMarketGrid = document.getElementById('blackMarketGrid');
         const musicVolumeSlider = document.getElementById('musicVolume');
         const sfxVolumeSlider = document.getElementById('sfxVolume');
+        const exchangeModal = document.getElementById('exchangeModal');
+        const exchangeInput = document.getElementById('exchangeInput');
+        const exchangeCost = document.getElementById('exchangeCost');
+        const exchangeBtn = document.getElementById('exchangeBtn');
 
         let powersModal = document.getElementById('powersModal');
         let isCharging = false;
@@ -3901,20 +4139,29 @@
             if (chestEl) {
                 chestEl.style.pointerEvents = 'none';
                 chestEl.style.animation = 'shake 0.5s';
-            }            
+            }
 
             setTimeout(() => {
                 state.chests.splice(index, 1);
                 state.chestsOpened = (state.chestsOpened || 0) + 1;
 
                 playSound('chestOpenSfx');
-
-                // Probabilidad de 1 en 1000 para el Foso Pollo
-                if (Math.random() < 0.001 && !state.fososOwned.includes(45)) {
+                
+                const rand = Math.random();
+                // Probabilidad de 1 en 2000 para el Foso Pollo
+                if (rand < 0.0005 && !state.fososOwned.includes(45)) {
                     state.fososOwned.push(45);
                     showToast("¡¡¡Has encontrado el legendario Foso Pollo 🍗!!!", "success", 5000);
+                } else if (rand < 0.05) { // 5% de probabilidad de desgracia
+                    const loss = state.sig * 0.01; // Pierde 1% de su dinero
+                    state.sig -= loss;
+                    showToast(`¡Mala suerte! El cofre estaba vacío y has perdido ${formatNum(loss)} ΣC.`, "error");
+                } else if (rand < 0.20) { // 15% de probabilidad de gemas (5% a 20%)
+                    const gemAmount = Math.floor(Math.random() * 6) + 1; // 1 a 6 gemas
+                    state.gems += gemAmount;
+                    showToast(`¡El cofre contenía ${gemAmount} gemas 💎!`, "success");
                 } else {
-                    // Recompensa normal si no toca el Foso Pollo
+                    // Recompensa normal de Sigmacoins
                     const basePer = FOSOS[state.activeFosoIndex]?.perClick || 1;
                     const currentPerClick = basePer * state.perClickMult * (1 + state.rebirthBonus);
                     const rewardAmount = Math.floor(currentPerClick * 60 * (Math.random() * 0.5 + 0.75)); // Entre 75% y 125% de 60s de ganancias
@@ -4047,6 +4294,11 @@
             const fosoPolloCard = document.querySelector('.shopCard[data-index="45"]');
             if (fosoPolloCard) {
                 fosoPolloCard.style.display = state.fososOwned.includes(45) ? 'flex' : 'none';
+            }
+            // Mostrar Foso Yousef si se posee
+            const fosoYousefCard = document.querySelector('.shopCard[data-index="46"]');
+            if (fosoYousefCard) {
+                fosoYousefCard.style.display = state.fososOwned.includes(46) ? 'flex' : 'none';
             }
 
             if(shopGems) shopGems.textContent = formatNum(state.gems);
@@ -4256,6 +4508,19 @@
             setTimeout(() => anim.remove(), 1000); // Coincide con la duración de la animación
         }
 
+        function createClickRipple(e) {
+            const ripple = document.createElement("div");
+            ripple.className = "ripple";
+            vaperWrap.appendChild(ripple);
+
+            const rect = vaperWrap.getBoundingClientRect();
+            ripple.style.left = `${e.clientX - rect.left}px`;
+            ripple.style.top = `${e.clientY - rect.top}px`;
+
+            setTimeout(() => ripple.remove(), 600);
+
+        }
+
         function createSmokeParticle() {
             if (!state.settings.smokeEnabled) return;
             const smokeLayer = document.getElementById('smokeLayer');
@@ -4420,7 +4685,8 @@
             // Auto-recharge per click
             const rechargeLevel = state.upgradeLevels.autorecharge || 0;
             if (rechargeLevel > 0) {
-                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge;
+                // La función de auto-recarga se activa aquí
+                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge; // CORREGIDO
                 state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
             }
 
@@ -4428,6 +4694,7 @@
             // We only want to show animations for manual clicks (where 'e' is a valid event object)
             if (e) {
                 // Animación de pulso
+                createClickRipple(e);
                 centralFoso.classList.add('clicked');
                 setTimeout(() => {
                     centralFoso.classList.remove('clicked');
@@ -4502,6 +4769,12 @@
             const toast = document.createElement('div');
             toast.className = 'toast';
 
+                        // Ajustar la duración de la animación de salida
+            const fadeOutTime = 0.3; // en segundos
+            const displayTime = (duration / 1000) - fadeOutTime;
+            toast.style.animation = `toastIn 0.3s ease forwards, toastOut ${fadeOutTime}s ease ${displayTime}s forwards`;
+            toast.style.animationDelay = `${fadeOutTime}s`;
+
             const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
             const colors = { success: '#27ae60', error: '#e74c3c', warning: '#f39c12', info: '#3498db' };
 
@@ -4516,6 +4789,26 @@
             setTimeout(() => {
                 toast.remove();
             }, duration);
+        }
+
+                function triggerGemRain() {
+            const container = document.createElement('div');
+            container.className = 'coin-rain'; // Reutilizamos la clase
+            document.body.appendChild(container);
+
+            for (let i = 0; i < 20; i++) {
+                const gem = document.createElement('div');
+                gem.className = 'coin'; // Reutilizamos la clase
+                gem.textContent = '💎';
+                gem.style.left = `${Math.random() * 100}vw`;
+                gem.style.animationDelay = `${Math.random() * 1.5}s`;
+                gem.style.fontSize = `${Math.random() * 10 + 15}px`;
+                container.appendChild(gem);
+            }
+
+            setTimeout(() => {
+                container.remove();
+            }, 5000);
         }
 
         function updateNextRewardCountdown() {
@@ -4628,6 +4921,7 @@
                 state.perClickMult *= reward.value;
                 showToast(`Multiplicador x${reward.value} activado por ${reward.duration / 60} min!`, 'success');
                 setTimeout(() => { state.perClickMult /= reward.value; showToast(`El multiplicador del regalo diario ha terminado.`, 'info'); }, reward.duration * 1000);
+                triggerGemRain();
             } else if (reward.type === 'combo') {
                 state.sig += reward.value.sig;
                 state.totalSigEarned += reward.value.sig;
@@ -4651,8 +4945,9 @@
             const level = state.upgradeLevels.autoclicker || 0;
             if (level > 0) {
                 const cps = AUTOCLICKER_UPGRADES[level - 1].cps;
-                autoClickTimer = setInterval(() => {
-                    if (state.powerOn && !isCharging && state.battery > 0 && document.visibilityState === 'visible') {                        handleCentralClick(null); 
+                autoClickTimer = setInterval(() => { // CORREGIDO
+                    if (state.powerOn && !isCharging && state.battery > 0 && document.visibilityState === 'visible') {
+                        handleCentralClick(null);
                     }
                 }, 1000 / cps);
             }
@@ -4871,20 +5166,6 @@
                 saveState();
                 updateAutoClickLoop();
                 render();
-            }
-        }
-
-        function buyPrestigeUpgrade(id) {
-            const upgrade = PRESTIGE_UPGRADES[id];
-            const level = state.prestigeUpgrades[id] || 0;
-            const cost = upgrade.cost * (level + 1);
-
-            if (state.prestigePoints >= cost && level < upgrade.maxLevel) {
-                state.prestigePoints -= cost;
-                state.prestigeUpgrades[id] = level + 1;
-                showToast(`¡Mejora de prestigio '${upgrade.name}' comprada!`, 'success');
-                saveState();
-                openPrestigeModal(); // Refresh
             }
         }
 
@@ -5495,19 +5776,28 @@
             const seconds = Math.floor((remaining % 60000) / 1000);
             marketStatusEl.textContent = `Próximo cambio de precios en: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
+                function closeAndAnimate(modal) {
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('closing');
+            }, 300); // Duración de la animación de salida
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadState();
             checkMissionReset(); // Must be before render
-            renderWheel();
-            calculateAfkEarnings();
-            checkWheelCooldown(); // Initial check
+// Initial check
             translateUI();
             updateAutoClickLoop();
             render();
             // startTutorial(); // Tutorial deshabilitado permanentemente
 
             setInterval(saveState, CONFIG.autosaveMs);
+
+                        renderWheel();
+            calculateAfkEarnings();
+            checkWheelCooldown(); // Initial check
 
             // // Intervalo para la mecánica de quemado (DESACTIVADO)
             // setInterval(() => {
@@ -5568,14 +5858,14 @@
 
             if(btnMaintenance) btnMaintenance.addEventListener('click', openMaintenanceModal);
             if(maintenanceModal) {
-                maintenanceModal.querySelector('.close-btn').addEventListener('click', () => {
-                    maintenanceModal.classList.add('hidden');
+                             maintenanceModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(maintenanceModal);
                 });
             }
 
             if(blackMarketModal) {
-                blackMarketModal.querySelector('.close-btn').addEventListener('click', () => {
-                    blackMarketModal.classList.add('hidden');
+                             blackMarketModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(blackMarketModal);
                 });
             }
 
@@ -5647,16 +5937,17 @@
 
             if(shopModal) {
               shopModal.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                  shopModal.classList.add('hidden');
+                btn.addEventListener('click', () => { 
+                  closeAndAnimate(shopModal);
                   if (!state.tutorialCompleted && state.tutorialStep === 5) checkTutorialProgress(6);
                 });
               });
             }
 
             if(btnUpgrades) btnUpgrades.addEventListener('click', () => {
-                upgradesModal.classList.remove('hidden');
+           
                 renderUpgrades();
+                                upgradesModal.classList.remove('hidden')
                 handleTutorialAction(6); // Tutorial step for upgrades
             });
             if(upgradesModal) {
@@ -5787,10 +6078,10 @@
             if(btnClaimDaily) btnClaimDaily.addEventListener('click', claimDailyReward);
             
             if(powersModal) {
-                powersModal.querySelector('.close-btn').addEventListener('click', () => powersModal.classList.add('hidden'));
+                powersModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(powersModal));
             }
             if(btnAFK) btnAFK.addEventListener('click', openAfkModal);
-            if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => afkModal.classList.add('hidden'));
+            if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(afkModal));
             if(btnClaimAFK) btnClaimAFK.addEventListener('click', claimAfkEarnings);
             if(btnUpgradeAFK) btnUpgradeAFK.addEventListener('click', upgradeAfk);
             afkModal.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => afkModal.classList.add('hidden')));
@@ -5818,9 +6109,21 @@
                 });
             }
 
+            if(btnPromo) {
+                btnPromo.addEventListener('click', () => {
+                    promoModal.classList.remove('hidden');
+                });
+            }
+
+            if(promoModal) {
+                promoModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(promoModal);
+                });
+            }
+
             if(missionsModal) {
-                missionsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    missionsModal.classList.add('hidden');
+                missionsModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(missionsModal);
                 });
             }
 
@@ -5975,6 +6278,20 @@
                 state.equippedPet = petId;
                 playSound('successSfx');
                 renderPets();
+            }
+        }
+
+        function buyPrestigeUpgrade(id) {
+            const upgrade = PRESTIGE_UPGRADES[id];
+            const level = state.prestigeUpgrades[id] || 0;
+            const cost = upgrade.cost * (level + 1);
+
+            if (state.prestigePoints >= cost && level < upgrade.maxLevel) {
+                state.prestigePoints -= cost;
+                state.prestigeUpgrades[id] = (state.prestigeUpgrades[id] || 0) + 1;
+                showToast(`¡Mejora de prestigio '${upgrade.name}' comprada!`, 'success');
+                saveState();
+                openPrestigeModal(); // Refresh
             }
         }
     })();
@@ -6276,6 +6593,9 @@
 
             setInterval(saveState, CONFIG.autosaveMs);
 
+            renderWheel();
+            calculateAfkEarnings();
+            checkWheelCooldown(); // Initial check
             // // Intervalo para la mecánica de quemado (DESACTIVADO)
             // setInterval(() => {
             //     if ((state.clicksThisSecond || 0) > CONFIG.overheatCps) {
@@ -6285,7 +6605,7 @@
             //     }
             //     state.clicksThisSecond = 0;
             // }, 1000);
-            
+
             setInterval(() => { render(); updateMarketStatus(); updateEventUI(); renderActiveFlavor(); }, CONFIG.uiTickMs);
             setInterval(calculateAfkEarnings, 60000);
             setInterval(checkWheelCooldown, 1000);
@@ -6334,14 +6654,14 @@
 
             if(btnMaintenance) btnMaintenance.addEventListener('click', openMaintenanceModal);
             if(maintenanceModal) {
-                maintenanceModal.querySelector('.close-btn').addEventListener('click', () => {
-                    maintenanceModal.classList.add('hidden'); 
+                maintenanceModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(maintenanceModal);
                 });
             }
 
             if(blackMarketModal) {
-                blackMarketModal.querySelector('.close-btn').addEventListener('click', () => {
-                    blackMarketModal.classList.add('hidden');
+                blackMarketModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(blackMarketModal);
                 });
             }
 
@@ -6431,7 +6751,6 @@
                 document.getElementById('btnConfirmRebirth').addEventListener('click', handleRebirth);
             }
 
-            if(btnCrafting) btnCrafting.addEventListener('click', openCraftingModal);
             if(craftingModal) {
                 craftingModal.querySelector('.close-btn').addEventListener('click', () => craftingModal.classList.add('hidden'));
                 document.getElementById('btnCombine').addEventListener('click', combineLiquids);
@@ -6446,10 +6765,51 @@
                 });
             }
 
+
+            const btnExchangeFromShop = document.getElementById('btnExchangeFromShop');
+            if(btnExchangeFromShop) btnExchangeFromShop.addEventListener('click', openExchangeModal);
+
+            if(btnCrafting) btnCrafting.addEventListener('click', openCraftingModal);
+
+            if(exchangeModal) {
+                const openExchangeModal = () => {
+                    exchangeInput.value = '';
+                    exchangeCost.textContent = 'Costo: 0 ΣC';
+                    exchangeModal.classList.remove('hidden');
+                };
+                if(btnExchange) btnExchange.addEventListener('click', openExchangeModal);
+                if(btnExchangeFromShop) btnExchangeFromShop.addEventListener('click', openExchangeModal);
+                exchangeModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(exchangeModal));
+                exchangeInput.addEventListener('input', () => {
+                    const amount = parseInt(exchangeInput.value, 10) || 0;
+                    const cost = amount * 30;
+                    exchangeCost.textContent = `Costo: ${formatNum(cost)} ΣC`;
+                });
+                exchangeBtn.addEventListener('click', () => {
+                    const amount = parseInt(exchangeInput.value, 10);
+                    if (!amount || amount <= 0) {
+                        showToast('Introduce una cantidad válida.', 'error');
+                        return;
+                    }
+                    const cost = amount * 30;
+                    if (state.sig >= cost) {
+                        state.sig -= cost;
+                        state.gems += amount;
+                        showToast(`¡Has intercambiado ${formatNum(cost)} ΣC por ${formatNum(amount)} gemas!`, 'success');
+                        exchangeInput.value = '';
+                        exchangeCost.textContent = 'Costo: 0 ΣC';
+                        closeAndAnimate(exchangeModal);
+                        render();
+                    } else {
+                        showToast('No tienes suficientes Sigmacoins para este intercambio.', 'error');
+                    }
+                });
+            }
+
             if(btnPrestige) btnPrestige.addEventListener('click', openPrestigeModal);
             if(prestigeModal) {
-                prestigeModal.querySelector('.close-btn').addEventListener('click', () => {
-                    prestigeModal.classList.add('hidden');
+                prestigeModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(prestigeModal);
                 });
                 document.getElementById('btnConfirmPrestige').addEventListener('click', handlePrestige);
                 prestigeModal.querySelector('#prestigeUpgradesGrid').addEventListener('click', (e) => {
@@ -6478,8 +6838,8 @@
 
             if(configModal) {
               configModal.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                  configModal.classList.add('hidden');
+                btn.addEventListener('click', () => { 
+                  closeAndAnimate(configModal);
                 });
               });
             }
@@ -6554,8 +6914,8 @@
             }
 
             if(wheelModal) {
-                wheelModal.querySelector('.close-btn').addEventListener('click', () => {
-                    wheelModal.classList.add('hidden');
+                wheelModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(wheelModal);
                 });
             }
 
@@ -6585,8 +6945,8 @@
             }
 
             if(achievementsModal) {
-                achievementsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    achievementsModal.classList.add('hidden');
+                achievementsModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(achievementsModal);
                 });
             }
 
@@ -6594,8 +6954,8 @@
                 btnChests.addEventListener('click', openChestsModal);
             }
             if(chestsModal) {
-                chestsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    chestsModal.classList.add('hidden');
+                chestsModal.querySelector('.close-btn').addEventListener('click', () => { 
+                    closeAndAnimate(chestsModal);
                 });
             }
 
@@ -6610,7 +6970,7 @@
             errorSfx = document.getElementById('errorSfx');
             if (petsModal) {
                 petsModal.querySelector('.close-btn').addEventListener('click', () => {
-                    petsModal.classList.add('hidden');
+                    closeAndAnimate(petsModal);
                 });
                 petsModal.querySelector('#petsGrid').addEventListener('click', handlePetAction);
             }
@@ -6689,12 +7049,12 @@
 
                     if (currentLevel < upgrades.length) {
                         if (!state.upgradeLevels[upgradeType]) state.upgradeLevels[upgradeType] = 0;
-                        const nextUpgrade = upgrades[currentLevel];
+                        const nextUpgrade = upgrades[currentLevel]; // CORREGIDO
                         const cost = nextUpgrade.cost;
                         if (state.sig >= cost) {
                             state.sig -= cost;
                             state.upgradeLevels[upgradeType]++;
-                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity; // CORREGIDO
+                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
                             playSound('buySfx');
                             saveState();
