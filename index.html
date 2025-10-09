@@ -55,7 +55,7 @@
       background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
       padding: 16px; border-radius: 12px; border: 1px solid rgba(100, 116, 139, 0.3);
       width: 620px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-      display: flex; flex-direction: column; max-height: calc(100vh - 40px);
+      display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow-y: auto;
   }
   .stats-grid {
       display: grid;
@@ -133,10 +133,21 @@
   #mensajes li.otro {
     background: #2a3f5a; align-self: flex-start; border-bottom-left-radius: 4px;
   }
-  #mensajes li.ceo-message {
-    background: linear-gradient(135deg, #f59e0b, #facc15);
-    color: #000;
-    border: 1px solid #f59e0b;
+  #mensajes li.rank-gold, #rankingPanel .rank-gold td {
+    background: linear-gradient(145deg, #fde047, #eab308); color: #422006; font-weight: bold;
+  }
+  #mensajes li.rank-silver, #rankingPanel .rank-silver td {
+    background: linear-gradient(145deg, #e5e7eb, #9ca3af); color: #1f2937; font-weight: bold;
+  }
+  #mensajes li.rank-bronze, #rankingPanel .rank-bronze td {
+    background: linear-gradient(145deg, #fcd3a1, #d97706); color: #451a03; font-weight: bold;
+  }
+  #mensajes li.rank-diamond, #rankingPanel .rank-diamond td {
+    background: linear-gradient(145deg, #a5f3fc, #22d3ee); color: #0e7490; font-weight: bold;
+  }
+  #mensajes li.rank-gold strong, #mensajes li.rank-silver strong, #mensajes li.rank-bronze strong, #mensajes li.rank-diamond strong {
+    color: inherit;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2);
   }
   .input-area { display: flex; margin-top: 10px; gap: 8px; }
   #replyingTo {
@@ -983,6 +994,9 @@
   const panelClicks = document.getElementById("panelClicks");
   let localPlayerId = localStorage.getItem('localPlayerId') || `Jugador#${Math.floor(1000 + Math.random() * 9000)}`;
 
+  // Variable global para guardar el ranking ordenado
+  let rankedPlayers = [];
+
   // Chat UI Elements
   const chatLista = document.getElementById("mensajes");
   const chatInput = document.getElementById("msg");
@@ -1036,7 +1050,7 @@
       rankingTable.appendChild(document.getElementById('rankingEmptyRow'));
       return;
     }
-    // Transformar en array y ordenar por clicks desc
+    // Transformar en array, ordenar y guardar en la variable global
     const players = Object.entries(dataObj).map(([k,v]) => {
       // soporta tanto estructura con nombre dentro como sin ella
       return {
@@ -1047,7 +1061,8 @@
         updatedAt: v?.updatedAt ?? 0
       };
     }).sort((a,b) => b.clicks - a.clicks);
-
+    
+    rankedPlayers = players; // Actualizar la lista global
     // Si está vacío
     if (players.length === 0) {
       rankingEmpty.innerText = "Aún no hay jugadores.";
@@ -1062,14 +1077,18 @@
 
     top15.forEach((p, i) => {
       const tr = document.createElement("tr");
+      const rankClasses = {
+        0: 'rank-gold',
+        1: 'rank-silver',
+        2: 'rank-bronze'
+      };
       tr.style.animationDelay = `${i * 0.05}s`;
-      if (p.name.toLowerCase() === 'ceo') {
-        tr.classList.add('ceo-rank');
-        isPlayerInTop15 = p.name === currentPlayerName;
-      } else if (p.name === currentPlayerName) {
+      if (p.name === currentPlayerName) {
         tr.classList.add('currentUser');
         isPlayerInTop15 = true;
       }
+      if (p.name.toLowerCase() === 'ceo') tr.classList.add('rank-diamond');
+      else if (rankClasses[i]) tr.classList.add(rankClasses[i]);
 
       tr.innerHTML = `
         <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
@@ -1083,12 +1102,16 @@
         const playerIndex = players.findIndex(p => p.name === currentPlayerName);
         if (playerIndex > -1) {
             const player = players[playerIndex];
+            const rankClasses = {
+                0: 'rank-gold',
+                1: 'rank-silver',
+                2: 'rank-bronze'
+            };
             const tr = document.createElement("tr");
-            if (player.name.toLowerCase() === 'ceo') {
-                tr.classList.add('ceo-rank');
-            } else {
-                tr.className = 'currentUser';
-            }
+            tr.className = 'currentUser';
+            if (player.name.toLowerCase() === 'ceo') tr.classList.add('rank-diamond');
+            else if (rankClasses[playerIndex]) tr.classList.add(rankClasses[playerIndex]);
+
             tr.innerHTML = `
                 <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(player.name)}">${playerIndex + 1}. ${escapeHtml(player.name)}</td>
                 <td style="text-align:center">${player.clicks.toLocaleString()}</td>
@@ -1260,8 +1283,19 @@
       }
 
       li.innerHTML = `${replyHtml}<span><strong>${escapeHtml(data.nombre)}:</strong> ${escapeHtml(data.texto)}</span><span class="hora">${hora}</span>`;
+      
+      // Asignar clases de ranking
+      const playerRankIndex = rankedPlayers.findIndex(p => p.name === data.nombre);
+      const rankClasses = {
+        0: 'rank-gold',
+        1: 'rank-silver',
+        2: 'rank-bronze'
+      };
+
       if (data.nombre.toLowerCase() === 'ceo') {
-        li.className = 'ceo-message';
+        li.classList.add('rank-diamond');
+      } else if (playerRankIndex !== -1 && rankClasses[playerRankIndex]) {
+        li.classList.add(rankClasses[playerRankIndex]);
       } else {
         li.className = data.nombre === miNombre ? 'mio' : 'otro';
       }
