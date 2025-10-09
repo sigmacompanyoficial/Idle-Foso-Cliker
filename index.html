@@ -687,62 +687,6 @@
     flex-shrink: 0;
 }
 
-/* --- Tutorial Styles --- */
-.tutorial-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-    z-index: 10004; /* Above everything */
-    pointer-events: none; /* Allow clicks through by default */
-}
-.tutorial-highlight {
-    position: absolute;
-    border: 3px solid var(--accent);
-    border-radius: 12px;
-    box-shadow: 0 0 20px var(--accent);
-    transition: all 0.3s ease-in-out;
-    pointer-events: all; /* Clicks on the highlight are for the element underneath */
-}
-.tutorial-tooltip {
-    position: absolute;
-    background: var(--panel);
-    color: #eef6ff;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: 1px solid var(--accent);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-    max-width: 280px;
-    z-index: 10005;
-    pointer-events: all; /* Clickable */
-    transform-origin: center;
-    animation: toastIn 0.3s ease;
-}
-.tutorial-tooltip p {
-    margin: 0 0 10px;
-    font-size: 14px;
-    line-height: 1.4;
-}
-.tutorial-tooltip button {
-    width: 100%;
-    justify-content: center;
-}
-.tutorial-arrow {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: var(--panel);
-    border-top: 1px solid var(--accent);
-    border-left: 1px solid var(--accent);
-    transform: rotate(45deg);
-}
-.tutorial-arrow.top { top: -10px; left: calc(50% - 10px); }
-.tutorial-arrow.bottom { bottom: -10px; left: calc(50% - 10px); transform: rotate(225deg); }
-.tutorial-arrow.left { left: -10px; top: calc(50% - 10px); transform: rotate(-45deg); }
-.tutorial-arrow.right { right: -10px; top: calc(50% - 10px); transform: rotate(135deg); }
-.tutorial-active { pointer-events: auto !important; /* Re-enable pointer events for the overlay */
-}
-
 /* --- Estilos del Panel de Ranking --- */
 #rankingPanel {
   position: relative;
@@ -888,16 +832,6 @@
       }
   </style>
 
-  <!-- Tutorial Overlay -->
-  <div id="tutorialOverlay" class="tutorial-overlay hidden">
-      <div id="tutorialHighlight" class="tutorial-highlight"></div>
-      <div id="tutorialTooltip" class="tutorial-tooltip">
-          <div id="tutorialArrow" class="tutorial-arrow"></div>
-          <p id="tutorialText" style="margin: 0 0 10px; font-size: 14px; line-height: 1.4;"></p>
-          <button id="tutorialSkipBtn" class="mata-btn" style="background:#c11e3c; justify-content: center; width: 100%; margin-top: 5px; display: none;">Saltar Tutorial</button>
-          <button id="tutorialNextBtn" class="mata-btn">Siguiente</button>
-      </div>
-  </div>
   <!-- Pantalla de advertencia mejorada -->
   <div id="advertencia" style="position:fixed;inset:0;background:#000;display:flex;justify-content:center;align-items:center;z-index:9999; padding: 10px;">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" style="width:100%;max-width:1200px;height:auto" font-family="Arial" font-weight="bold" text-anchor="middle">
@@ -3697,15 +3631,6 @@
             passivePerSec: 0,
             tutorialCompleted: true,
             tutorialStep: 0,
-            upgradeLevels: {
-                battery: 0,
-                autoclicker: 0,
-                afk: 0,
-                critical: 0,
-                combo: 0,
-                liquid_luck: 0, // CORREGIDO: Faltaba autorecharge
-                autorecharge: 0,
-            },
             combo: {
                 count: 0,
                 expires: 0,
@@ -3847,12 +3772,6 @@
         let currentMaintenanceStep = 0;
         let tutorialHighlights = [];
         
-        const tutorialHighlight = document.getElementById('tutorialHighlight');
-        const tutorialTooltip = document.getElementById('tutorialTooltip');
-        const tutorialText = document.getElementById('tutorialText');
-        const tutorialSkipBtn = document.getElementById('tutorialSkipBtn'); // Definido pero no usado en la lógica original.
-        const tutorialNextBtn = document.getElementById('tutorialNextBtn');
-
         function updateMenuNotification() {
             anyNotification = !dotDaily.classList.contains('hidden') || !dotMissions.classList.contains('hidden') || !dotChests.classList.contains('hidden') || !dotAFK.classList.contains('hidden') || !dotPets.classList.contains('hidden');
             dotMenu.classList.toggle('hidden', !anyNotification);
@@ -4454,7 +4373,6 @@
                 chargeInterval = null;
                 isCharging = false;
                 if(chargeLabel.dataset.lang) chargeLabel.textContent = LANGUAGES[state.lang || 'es'][chargeLabel.dataset.lang];
-                handleTutorialAction(3);
             } else {
                 isCharging = true;
                 chargeLabel.textContent = LANGUAGES[state.lang || 'es']['charging'] || 'Cargando...';
@@ -4467,7 +4385,6 @@
                         chargeInterval = null;
                         isCharging = false;
                         chargeLabel.textContent = LANGUAGES[state.lang || 'es']['charge'] || 'Cargar';
-                        handleTutorialAction(3);
                     }
                 }, 1000);
             }
@@ -4692,7 +4609,6 @@
             }
 
             checkAchievements();
-            handleTutorialAction(1);
             render();
         }
 
@@ -5764,7 +5680,6 @@
             translateUI();
             updateAutoClickLoop(); // CORREGIDO: Llamada a la función
             render();
-            startTutorial();
 
             setInterval(saveState, CONFIG.autosaveMs);
 
@@ -5890,7 +5805,6 @@
             if(btnPower) {
                 btnPower.addEventListener('click', () => {
                     state.powerOn = !state.powerOn; // CORREGIDO
-                    const powerStatus = state.powerOn ? 'encendido' : 'apagado';
                     const color = state.powerOn ? 'success' : 'error';
                     btnPower.style.background = state.powerOn ? '#0ea5b7' : '#555';
                     showToast(`Foso ${powerStatus}.`, color);
@@ -5898,21 +5812,16 @@
                 });
             }
 
-            if(btnChargeToggle) btnChargeToggle.addEventListener('click', () => {
-                toggleCharging();
-                handleTutorialAction(3); // Tutorial step for charging
-            });
+            if(btnChargeToggle) btnChargeToggle.addEventListener('click', toggleCharging);
             
             if(btnShop) btnShop.addEventListener('click', () => {
               if(shopModal) shopModal.classList.remove('hidden');
-              handleTutorialAction(4); // After opening menu, this is the next action
             });
 
             if(shopModal) {
               shopModal.querySelectorAll('.close-btn').forEach(btn => {
                 btn.addEventListener('click', () => { 
                   closeAndAnimate(shopModal);
-                  if (!state.tutorialCompleted && state.tutorialStep === 5) checkTutorialProgress(6);
                 });
               });
             }
@@ -5921,12 +5830,10 @@
            
                 renderUpgrades();
                                 upgradesModal.classList.remove('hidden')
-                handleTutorialAction(6); // Tutorial step for upgrades
             });
             if(upgradesModal) {
                 upgradesModal.querySelector('.close-btn').addEventListener('click', () => {
                     upgradesModal.classList.add('hidden');
-                    handleTutorialAction(7);
                 });
             }
 
@@ -6173,7 +6080,6 @@
                                 showToast(`Foso ${item.name} comprado y equipado!`, 'success');
                                 playSound('buySfx');
                                 updateMissionProgress('buy_foso', 1);                                
-                                handleTutorialAction(5); // Check tutorial after buying
                                 checkAchievements();
                             } else {
                                 showToast('No tienes suficientes Sigmacoins.', 'error');
