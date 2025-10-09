@@ -52,12 +52,14 @@
   /* --- Left Info Panel --- */
   .left-panel {
       position: fixed; top: 20px; left: 20px; z-index: 10;
-      background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
       padding: 16px; border-radius: 12px; border: 1px solid rgba(100, 116, 139, 0.3);
       width: 620px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      display: flex; flex-direction: column; max-height: calc(100vh - 40px);
   }
   .stats-grid {
       display: grid;
+      flex-shrink: 0;
       grid-template-columns: auto 1fr;
       gap: 8px 12px;
       align-items: center;
@@ -109,25 +111,19 @@
   .shopCard{background:var(--panel);padding:8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:1px solid rgba(100, 116, 139, 0.4); transition: all 0.2s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);}
 
   /* --- Chat Styles --- */
- /* --- FIX para mantener el chat con tamaño fijo sin romper el estilo --- */
-#chatPanel {
-  max-height: 300px;     /* Altura máxima fija */
-  overflow: hidden;      /* Evita que crezca */
-  display: flex;
-  flex-direction: column;
-}
-
-#mensajes {
-  flex: 1;
-  overflow-y: auto;      /* Scroll interno solo en los mensajes */
-  min-height: 0;
-}
-
-#mensajes li {
-  white-space: normal;   /* Mensajes largos hacen salto de línea */
-  word-break: break-word;
-}
-
+  #chatPanel {
+    margin-top: 15px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  #chatPanel h3 { margin: 0 0 10px 0; color: var(--accent, #22d3ee); font-weight: 800; display:flex; align-items:center; gap:8px; }
+  #mensajes {
+    list-style: none; padding: 0; margin: 0; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  }
+  #mensajes li {
+    max-width: 80%; padding: 6px 10px; border-radius: 12px; position: relative; word-wrap: break-word; font-size: 13px; line-height: 1.3;
+  }
   #mensajes li .hora {
     font-size: 10px; color: var(--muted); display: block; text-align: right; margin-top: 4px;
   }
@@ -137,10 +133,37 @@
   #mensajes li.otro {
     background: #2a3f5a; align-self: flex-start; border-bottom-left-radius: 4px;
   }
+  #mensajes li.ceo-message {
+    background: linear-gradient(135deg, #f59e0b, #facc15);
+    color: #000;
+    border: 1px solid #f59e0b;
+  }
   .input-area { display: flex; margin-top: 10px; gap: 8px; }
+  #replyingTo {
+    background: rgba(0,0,0,0.2);
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    border-left: 3px solid var(--accent);
+    position: relative;
+  }
+  #replyingTo p { margin: 0; color: var(--muted); }
+  #replyingTo span {
+    display: block;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #cancelReply {
+    position: absolute; top: 4px; right: 4px; cursor: pointer;
+    width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  }
   .chat-ranking-container {
     display: flex;
     gap: 15px;
+    overflow: hidden; /* Para que los hijos con flex:1 se comporten */
     margin-top: 15px;
     align-items: flex-start;
   }
@@ -166,7 +189,7 @@
   .shopCard:hover { transform: translateY(-2px); box-shadow: 0 0 15px -3px var(--accent), inset 0 1px 0 rgba(255,255,255,0.03); border-color: var(--accent);}
   .shopCard img, .shopCard svg{width:72px;height:auto}
   .priceTag{background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:6px;font-weight:700;font-size:13px}
-  .hint{color:var(--muted);font-size:13px}
+  .hint{color:var(--muted);font-size:13px; line-height: 1.4;}
   footer{position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); text-align:center;color:var(--muted);font-size:13px; z-index: 5;}
 
   @media (max-width:600px){
@@ -177,6 +200,7 @@
     .right-menu { width: 240px; }
     .right-menu .mata-btn { padding: 8px 12px; gap: 6px; font-size: 14px; } /* Botones más pequeños */
     .right-menu { gap: 6px; } /* Menos espacio entre botones */
+    .chat-ranking-container { flex-direction: column; }
     .vaperWrap svg { height: 65vh; } /* Reducir altura del foso en móviles */
     .modal-content { padding: 14px; width: min(96%, 980px); }
     .modal-body { padding-top: 10px; }
@@ -184,10 +208,6 @@
     #rankingPanel table { font-size: 12px; }
     #rankingPanel tbody td { padding: 4px; }
     #maintenanceGameArea { width: 90%; max-width: 300px; height: 320px; }
-    .chat-ranking-container {
-        flex-direction: column;
-        width: 100%;
-    }
     .vaperWrap svg.clicked {
       transform: scale(0.98); /* Animación de pulso al hacer clic */
     }
@@ -871,6 +891,10 @@
             <!-- Chat Panel -->
             <div id="chatPanel">
               <h3><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Sigma Chat</h3>
+              <div id="replyingTo" class="hidden">
+                <!-- Contenido de la respuesta aquí -->
+              </div>
+              <h3><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Sigma Chat</h3>
               <ul id="mensajes"></ul>
               <div class="input-area">
                 <input id="msg" placeholder="Escribe un mensaje..." />
@@ -963,6 +987,7 @@
   const chatLista = document.getElementById("mensajes");
   const chatInput = document.getElementById("msg");
   const chatEnviarBtn = document.getElementById("enviar");
+  const replyingToContainer = document.getElementById('replyingTo');
 
   // Usa los ids existentes en tu HTML si existen (para reflejar valores en el panel)
   const totalClicksEl = document.getElementById("totalClicks");
@@ -972,6 +997,9 @@
   let autoSaveEnabled = true;
   let autoSaveInterval = 5000; // ms
   let autoSaveTimer = null;
+
+  // Estado del chat
+  let replyingTo = null;
 
   // Guarda los datos del jugador en Realtime DB
   function savePlayerData(nombre, clicks, dinero, isAutoSave = false) {
@@ -1035,10 +1063,14 @@
     top15.forEach((p, i) => {
       const tr = document.createElement("tr");
       tr.style.animationDelay = `${i * 0.05}s`;
-      if (p.name === currentPlayerName) {
+      if (p.name.toLowerCase() === 'ceo') {
+        tr.classList.add('ceo-rank');
+        isPlayerInTop15 = p.name === currentPlayerName;
+      } else if (p.name === currentPlayerName) {
         tr.classList.add('currentUser');
         isPlayerInTop15 = true;
       }
+
       tr.innerHTML = `
         <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
         <td style="text-align:center">${p.clicks.toLocaleString()}</td>
@@ -1052,7 +1084,11 @@
         if (playerIndex > -1) {
             const player = players[playerIndex];
             const tr = document.createElement("tr");
-            tr.className = 'currentUser';
+            if (player.name.toLowerCase() === 'ceo') {
+                tr.classList.add('ceo-rank');
+            } else {
+                tr.className = 'currentUser';
+            }
             tr.innerHTML = `
                 <td style="padding-left:6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(player.name)}">${playerIndex + 1}. ${escapeHtml(player.name)}</td>
                 <td style="text-align:center">${player.clicks.toLocaleString()}</td>
@@ -1211,15 +1247,36 @@
       const li = document.createElement("li");
       const hora = new Date(data.hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       
-      // Usar el nombre guardado en el juego
       const miNombre = playerNameInput.value || localPlayerId;
 
-      li.innerHTML = `<span><strong>${escapeHtml(data.nombre)}:</strong> ${escapeHtml(data.texto)}</span><span class="hora">${hora}</span>`;
-      li.className = data.nombre === miNombre ? 'mio' : 'otro';
+      let replyHtml = '';
+      if (data.replyTo) {
+        replyHtml = `
+          <div style="background:rgba(0,0,0,0.15); padding: 4px 8px; border-radius:6px; margin-bottom:4px; font-size:11px; border-left: 2px solid #64748b;">
+            <strong>${escapeHtml(data.replyTo.nombre)}</strong>
+            <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #bdc3c7;">${escapeHtml(data.replyTo.texto)}</div>
+          </div>
+        `;
+      }
+
+      li.innerHTML = `${replyHtml}<span><strong>${escapeHtml(data.nombre)}:</strong> ${escapeHtml(data.texto)}</span><span class="hora">${hora}</span>`;
+      if (data.nombre.toLowerCase() === 'ceo') {
+        li.className = 'ceo-message';
+      } else {
+        li.className = data.nombre === miNombre ? 'mio' : 'otro';
+      }
       li.id = snap.key;
+
+      // Añadir listener para responder
+      li.addEventListener('click', () => {
+        replyingTo = { id: snap.key, nombre: data.nombre, texto: data.texto };
+        renderReplyingTo();
+      });
+
       chatLista.appendChild(li);
       chatLista.scrollTop = chatLista.scrollHeight; // scroll automático
     });
+
 
     // Borrar mensajes viejos para mantener la base de datos limpia
     const borrarMensajeViejo = async () => {
@@ -1238,10 +1295,37 @@
       
       const miNombre = playerNameInput.value || localPlayerId;
       
-      await push(chatRef, { nombre: miNombre, texto: texto, hora: Date.now() });
+      const messageData = {
+        nombre: miNombre,
+        texto: texto,
+        hora: Date.now()
+      };
+
+      if (replyingTo) {
+        messageData.replyTo = replyingTo;
+      }
+
+      await push(chatRef, messageData);
       chatInput.value = "";
+      replyingTo = null;
+      renderReplyingTo();
       borrarMensajeViejo();
     };
+
+    function renderReplyingTo() {
+        if (replyingTo) {
+            replyingToContainer.innerHTML = `
+                <p>Respondiendo a <strong>${escapeHtml(replyingTo.nombre)}</strong></p>
+                <span>${escapeHtml(replyingTo.texto)}</span>
+                <div id="cancelReply" title="Cancelar respuesta">&times;</div>
+            `;
+            replyingToContainer.classList.remove('hidden');
+            document.getElementById('cancelReply').onclick = () => { replyingTo = null; renderReplyingTo(); };
+        } else {
+            replyingToContainer.innerHTML = '';
+            replyingToContainer.classList.add('hidden');
+        }
+    }
 
     chatEnviarBtn.addEventListener('click', enviarMensaje);
     chatInput.addEventListener('keydown', (e) => {
@@ -3389,8 +3473,8 @@
         const rightMenu = document.getElementById('rightMenu');
         const btnPrestige = document.getElementById("btnPrestige");
         const prestigeModal = document.getElementById("prestigeModal");
-        const btnCrafting = document.getElementById("btnCrafting");
-        const craftingModal = document.getElementById("craftingModal");
+        const btnCrafting = document.getElementById("btnCrafting"); // No hay modal para esto
+        const craftingModal = document.getElementById("craftingModal"); // No hay modal para esto
         const btnConfig = document.getElementById('btnConfig');
         const configModal = document.getElementById('configModal');
         const langSelect = document.getElementById('langSelect');
@@ -3408,6 +3492,7 @@
         const btnClaimDaily = document.getElementById('btnClaimDaily');
         const dailyCarousel = document.getElementById('carousel');
         const dotDaily = document.getElementById('dotDaily');
+        const btnPowers = document.getElementById('btnPower');
         const btnAFK = document.getElementById('btnAFK');
         const afkModal = document.getElementById('afkModal');
         const btnUpgradeAFK = document.getElementById('btnUpgradeAFK');
@@ -3456,6 +3541,7 @@
         const musicVolumeSlider = document.getElementById('musicVolume');
         const sfxVolumeSlider = document.getElementById('sfxVolume');
 
+        let powersModal = document.getElementById('powersModal');
         let isCharging = false;
         let anyNotification = false;
         let chargeInterval = null;
@@ -3742,7 +3828,12 @@
                 chestEl.style.transition = 'transform 0.2s';
                 chestEl.addEventListener('mouseenter', () => chestEl.style.transform = 'scale(1.1)');
                 chestEl.addEventListener('mouseleave', () => chestEl.style.transform = 'scale(1)');
-                chestEl.addEventListener('click', () => openChest(index), { once: true });
+                chestEl.addEventListener('click', () => {
+                    // Deshabilitar todos los cofres para evitar doble clic
+                    chestsGrid.querySelectorAll('div').forEach(c => c.style.pointerEvents = 'none');
+                    // Abrir el cofre seleccionado
+                    openChest(index, chestEl);
+                }, { once: true });
                 chestsGrid.appendChild(chestEl);
             });
         }
@@ -3752,25 +3843,33 @@
             if (chestEl) {
                 chestEl.style.pointerEvents = 'none';
                 chestEl.style.animation = 'shake 0.5s';
-            }
+            }            
 
-            state.chests.splice(index, 1);
-            state.chestsOpened = (state.chestsOpened || 0) + 1;
-            
             setTimeout(() => {
-                // Simple reward logic for now
+                state.chests.splice(index, 1);
+                state.chestsOpened = (state.chestsOpened || 0) + 1;
+
                 playSound('chestOpenSfx');
-                // La recompensa será 60 segundos de tus ganancias por clic actuales.
-                const basePer = FOSOS[state.activeFosoIndex]?.perClick || 1;
-                const currentPerClick = basePer * state.perClickMult * (1 + state.rebirthBonus);
-                const rewardAmount = Math.floor(currentPerClick * 60 * (Math.random() * 0.5 + 0.75)); // Entre 75% y 125% de 60s de ganancias
-                state.sig += rewardAmount;
-                state.totalSigEarned += rewardAmount;
-                showToast(`¡El cofre contenía ${formatNum(rewardAmount)} ΣC!`, 'success', 4000);
+
+                // Probabilidad de 1 en 1000 para el Foso Pollo
+                if (Math.random() < 0.001 && !state.fososOwned.includes(45)) {
+                    state.fososOwned.push(45);
+                    showToast("¡¡¡Has encontrado el legendario Foso Pollo 🍗!!!", "success", 5000);
+                } else {
+                    // Recompensa normal si no toca el Foso Pollo
+                    const basePer = FOSOS[state.activeFosoIndex]?.perClick || 1;
+                    const currentPerClick = basePer * state.perClickMult * (1 + state.rebirthBonus);
+                    const rewardAmount = Math.floor(currentPerClick * 60 * (Math.random() * 0.5 + 0.75)); // Entre 75% y 125% de 60s de ganancias
+                    state.sig += rewardAmount;
+                    state.totalSigEarned += rewardAmount;
+                    showToast(`¡El cofre contenía ${formatNum(rewardAmount)} ΣC!`, 'success', 4000);
+                }
+
                 openChestsModal(); // Refresh the modal
                 saveState();
                 checkAchievements();
-            }, 500);
+                render(); // Actualizar la UI principal
+            }, 600);
         }
 
         function saveState() {
@@ -5628,7 +5727,10 @@
             if(btnDaily) btnDaily.addEventListener('click', openDailyModal);
             if(closeDaily) closeDaily.addEventListener('click', () => dailyModal.classList.add('hidden'));
             if(btnClaimDaily) btnClaimDaily.addEventListener('click', claimDailyReward);
-
+            
+            if(powersModal) {
+                powersModal.querySelector('.close-btn').addEventListener('click', () => powersModal.classList.add('hidden'));
+            }
             if(btnAFK) btnAFK.addEventListener('click', openAfkModal);
             if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => afkModal.classList.add('hidden'));
             if(btnClaimAFK) btnClaimAFK.addEventListener('click', claimAfkEarnings);
@@ -6525,15 +6627,16 @@
                     const upgradeType = button.dataset.upgrade;
                     const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES, autorecharge: AUTORECHARGE_UPGRADES };
                     const upgrades = allUpgrades[upgradeType];
-                    const level = state.upgradeLevels[upgradeType] || 0;
+                    const currentLevel = state.upgradeLevels[upgradeType] || 0; // CORREGIDO
 
-                    if (level < upgrades.length) {
+                    if (currentLevel < upgrades.length) {
                         if (!state.upgradeLevels[upgradeType]) state.upgradeLevels[upgradeType] = 0;
-                        const cost = upgrades[level].cost;
+                        const nextUpgrade = upgrades[currentLevel];
+                        const cost = nextUpgrade.cost;
                         if (state.sig >= cost) {
                             state.sig -= cost;
                             state.upgradeLevels[upgradeType]++;
-                            if (upgradeType === 'battery') state.maxBattery = upgrades[level].capacity;
+                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity; // CORREGIDO
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
                             playSound('buySfx');
                             saveState();
