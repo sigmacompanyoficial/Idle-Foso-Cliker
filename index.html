@@ -54,7 +54,7 @@
       position: fixed; top: 20px; left: 20px; z-index: 10;
       background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
       padding: 16px; border-radius: 12px; border: 1px solid rgba(100, 116, 139, 0.3);
-      width: 620px; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      width: 620px; max-width: calc(100% - 40px); box-shadow: 0 8px 20px rgba(0,0,0,0.4);
       display: flex; flex-direction: column; max-height: calc(100vh - 40px); overflow-y: auto;
   }
   .stats-grid {
@@ -116,10 +116,11 @@
     background: rgba(15, 23, 42, 0.5);
     border-radius: 10px;
     padding: 12px;
+    display: flex; flex-direction: column; /* Asegura el layout de columna flexible */
   }
   #chatPanel h3 { margin: 0 0 10px 0; color: var(--accent, #22d3ee); font-weight: 800; display:flex; align-items:center; gap:8px; }
   #mensajes {
-    list-style: none; padding: 0; margin: 0; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    list-style: none; padding: 0; margin: 0; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; min-height: 50px;
   }
   #mensajes li {
     max-width: 80%; padding: 6px 10px; border-radius: 12px; position: relative; word-wrap: break-word; font-size: 13px; line-height: 1.3;
@@ -175,7 +176,7 @@
     display: flex;
     gap: 15px;
     overflow: hidden; /* Para que los hijos con flex:1 se comporten */
-    margin-top: 15px;
+    margin-top: 10px;
     align-items: flex-start;
   }
   .chat-ranking-container > div { flex: 1; }
@@ -200,7 +201,7 @@
   .shopCard:hover { transform: translateY(-2px); box-shadow: 0 0 15px -3px var(--accent), inset 0 1px 0 rgba(255,255,255,0.03); border-color: var(--accent);}
   .shopCard img, .shopCard svg{width:72px;height:auto}
   .priceTag{background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:6px;font-weight:700;font-size:13px}
-  .hint{color:var(--muted);font-size:13px; line-height: 1.4;}
+  .hint{color:var(--muted);font-size:13px; line-height: 1.4; margin: 0;}
   footer{position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); text-align:center;color:var(--muted);font-size:13px; z-index: 5;}
 
   @media (max-width:600px){
@@ -211,7 +212,7 @@
     .right-menu { width: 240px; }
     .right-menu .mata-btn { padding: 8px 12px; gap: 6px; font-size: 14px; } /* Botones más pequeños */
     .right-menu { gap: 6px; } /* Menos espacio entre botones */
-    .chat-ranking-container { flex-direction: column; }
+    .chat-ranking-container { flex-direction: column; gap: 10px; }
     .vaperWrap svg { height: 65vh; } /* Reducir altura del foso en móviles */
     .modal-content { padding: 14px; width: min(96%, 980px); }
     .modal-body { padding-top: 10px; }
@@ -223,6 +224,11 @@
       transform: scale(0.98); /* Animación de pulso al hacer clic */
     }
     footer { display: none; } /* Ocultar footer en móvil para más espacio */
+    #chatPanel { display: flex; flex-direction: column; min-height: 300px; max-height: 45vh; }
+    #mensajes { height: auto; }
+    .chat-ranking-container > div {
+      min-width: 0; /* Allow flex items to shrink properly */
+    }
   }
   @media (max-width: 900px) {
     /* 3 columnas para tablets, 2 para móviles */
@@ -900,8 +906,11 @@
 
           <div class="chat-ranking-container">
             <!-- Chat Panel -->
-
+            <div id="chatPanel">
               <h3><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> Sigma Chat</h3>
+              <div id="replyingTo" class="hidden">
+                <!-- Contenido de la respuesta aquí -->
+              </div>
               <ul id="mensajes"></ul>
               <div class="input-area">
                 <input id="msg" placeholder="Escribe un mensaje..." />
@@ -936,17 +945,6 @@
               </div>
             </div>
           </div>
-          
-          <!-- Sección de Código Promocional -->
-          <div id="promoCodeSection" style="margin-top: 15px; background: rgba(15, 23, 42, 0.5); border-radius: 10px; padding: 12px;">
-              <h4 style="margin: 0 0 8px; font-size: 14px; color: var(--accent);">Código Promocional</h4>
-              <div style="display:flex; gap:8px;">
-                  <input id="promoInput" type="text" placeholder="Introduce un código" data-lang-placeholder="promo_code_placeholder" style="flex:1; padding:6px 8px; border-radius:8px; border:1px solid rgba(100,116,139,0.2); background:rgba(0,0,0,0.12); color:inherit;">
-                  <button id="promoBtn" class="mini-btn" data-lang="redeem">Canjear
-                  </button>
-              </div>
-          </div>
-
 <!-- ===========================
      SCRIPTS: FIREBASE + LÓGICA
      =========================== -->
@@ -1481,6 +1479,11 @@
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             <span data-lang="crafting">Laboratorio</span>
             <span id="dotCrafting" class="notify-dot hidden"></span>
+        </button>
+        <button id="btnPromo" class="mata-btn" style="background:#2ecc71">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21.4 11.6l-9-9a2 2 0 0 0-2.8 0l-9 9a2 2 0 0 0 0 2.8l9 9a2 2 0 0 0 2.8 0l9-9a2 2 0 0 0 0-2.8z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span data-lang="promo_code_button">Código Promocional</span>
+            <span id="dotPromo" class="notify-dot hidden"></span>
         </button>
         <hr style="border-color: rgba(100, 116, 139, 0.3); width: 100%; margin: 5px 0;">
         <button id="btnAchievements" class="mata-btn" style="background:#f59e0b">
@@ -2568,6 +2571,25 @@
     </div>
 </div>
 
+<!-- Modal Código Promocional -->
+<div id="promoModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title" data-lang="promo_code_title"><svg class="icon" style="width:20px; height:20px;" viewBox="0 0 24 24"><path d="M21.4 11.6l-9-9a2 2 0 0 0-2.8 0l-9 9a2 2 0 0 0 0 2.8l9 9a2 2 0 0 0 2.8 0l9-9a2 2 0 0 0 0-2.8z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> Código Promocional</div>
+            <button class="close-btn" data-close>&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <p class="hint" data-lang="promo_code_desc">Introduce un código para recibir recompensas especiales.</p>
+            <div style="display:flex; gap:8px; margin-top: 15px;">
+                <input id="promoInput" type="text" placeholder="Introduce un código" data-lang-placeholder="promo_code_placeholder" style="flex:1; padding:10px; border-radius:8px; border:1px solid rgba(100, 116, 139, 0.2); background:rgba(0,0,0,0.12); color:inherit; text-align: center;">
+                <button id="promoBtn" class="mata-btn" data-lang="redeem" style="justify-content: center;">
+                    Canjear
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toastContainer"></div>
 
@@ -2690,6 +2712,8 @@
                 event_black_market: "🕵️ ¡Mercado Negro Abierto!",
                 black_market_title: "🕵️ Mercado Negro",
                 black_market_desc: "Un vendedor misterioso te ofrece estos tratos... ¡Solo por tiempo limitado!",
+                promo_code_button: "Código Promocional",
+                promo_code_title: "🎁 Código Promocional",
                 chests_title: "🎁 Cofres Sorpresa",
                 chests_desc: "¡Has encontrado cofres! Haz clic en uno para abrirlo y ver qué contiene.",
                 combo_meter: "Combo x{value}",
@@ -2792,6 +2816,8 @@
                 event_black_market: "🕵️ Black Market Open!",
                 black_market_title: "🕵️ Black Market",
                 black_market_desc: "A mysterious vendor offers you these deals... For a limited time only!",
+                promo_code_button: "Promo Code",
+                promo_code_title: "🎁 Promo Code",
                 chests_title: "🎁 Surprise Chests",
                 chests_desc: "You've found chests! Click one to open it and see what's inside.",
                 combo_meter: "Combo x{value}",
@@ -3504,6 +3530,8 @@
         const btnPrestige = document.getElementById("btnPrestige");
         const prestigeModal = document.getElementById("prestigeModal");
         const btnCrafting = document.getElementById("btnCrafting"); // No hay modal para esto
+        const btnPromo = document.getElementById("btnPromo");
+        const promoModal = document.getElementById("promoModal");
         const craftingModal = document.getElementById("craftingModal"); // No hay modal para esto
         const btnConfig = document.getElementById('btnConfig');
         const configModal = document.getElementById('configModal');
