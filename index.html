@@ -2890,6 +2890,7 @@
                 upgrade_combo: "Combo Extendido",
                 upgrade_liquid_luck: "Suerte de Líquido",
                 upgrade_autorecharge: "Auto-Recarga",
+                upgrade_passive_recharge: "Recarga Pasiva",
                 follow_us: "Síguenos:",
                 footer_credits: "Maqueta funcional — HTML/CSS/JS puro. Guardado automático en localStorage.",
                 settings_title: "Configuración",
@@ -2997,6 +2998,7 @@
                 upgrade_combo: "Combo Extension",
                 upgrade_liquid_luck: "Liquid Luck",
                 upgrade_autorecharge: "Auto-Recharge",
+                upgrade_passive_recharge: "Passive Recharge",
                 follow_us: "Follow us:",
                 footer_credits: "Functional prototype — Pure HTML/CSS/JS. Autosave to localStorage.",
                 settings_title: "⚙️ Settings",
@@ -3384,6 +3386,13 @@
             { cost: 500000, reduction: 0.25 },
         ];
 
+        const PASSIVE_RECHARGE_UPGRADES = [
+            { cost: 10000, amount: 0.5 }, // 0.5 por segundo
+            { cost: 50000, amount: 1 },
+            { cost: 250000, amount: 2 },
+            { cost: 1000000, amount: 5 },
+        ];
+
         const COMBO_UPGRADES = [
             { cost: 25000, time: 500 }, // +0.5s
             { cost: 125000, time: 1000 }, // +1s
@@ -3763,6 +3772,7 @@
         let chargeInterval = null;
         let autoClickTimer = null;
         let canClaimDaily = false;
+        let passiveRechargeTimer = null;
         let nextRewardInterval = null;
         let comboDecayTimer = null;
         let marketUpdateInterval = null;
@@ -4359,11 +4369,46 @@
             const allUpgrades = {
                 autoclicker: { upgrades: AUTOCLICKER_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 10h4v4h-4zM4 10h4v4H4zM10 4h4v4h-4zM10 16h4v4h-4z"/><path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/></svg>', desc: 'Añade clics automáticos por segundo.' },
                 battery: { upgrades: BATTERY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14h-2v-6h2v6z"/></svg>', desc: 'Aumenta la capacidad máxima de la batería.' },
-                critical: { upgrades: CRITICAL_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z"/></svg>', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
                 efficiency: { upgrades: EFFICIENCY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"/></svg>', desc: 'Reduce el consumo de batería por clic.' },
+                critical: { upgrades: CRITICAL_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z"/></svg>', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
                 combo: { upgrades: COMBO_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2 L4 14h6l-1 8 10-12h-7z"/></svg>', desc: 'Aumenta el tiempo para mantener el combo.' },
                 autorecharge: { upgrades: AUTORECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14h-3v3l4-4-4-4v3H7v-2h3V8l-4 4 4 4v-3h5v2z" fill="currentColor"/></svg>', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
                 liquid_luck: { upgrades: LIQUID_LUCK_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
+                passive_recharge: { upgrades: PASSIVE_RECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 6v3l4 4"/><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/><path d="M13 2 L4 14h6l-1 8 10-12h-7z" fill="currentColor"/></svg>', desc: 'Recarga la batería pasivamente con el tiempo.' },
+            }
+        }
+
+        function renderUpgrades() {
+            const upgradesGrid = document.getElementById('upgradesGrid');
+            if (!upgradesGrid) return;
+            upgradesGrid.innerHTML = '';
+
+            const allUpgrades = {
+                autoclicker: { name_key: 'upgrade_autoclicker', upgrades: AUTOCLICKER_UPGRADES, icon: '👆', desc: 'Añade clics automáticos por segundo.' },
+                battery: { name_key: 'upgrade_battery', upgrades: BATTERY_UPGRADES, icon: '🔋', desc: 'Aumenta la capacidad máxima de la batería.' },
+                efficiency: { name_key: 'upgrade_efficiency', upgrades: EFFICIENCY_UPGRADES, icon: '💧', desc: 'Reduce el consumo de batería por clic.' },
+                critical: { name_key: 'upgrade_critical', upgrades: CRITICAL_UPGRADES, icon: '💥', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
+                combo: { name_key: 'upgrade_combo', upgrades: COMBO_UPGRADES, icon: '⚡', desc: 'Aumenta el tiempo para mantener el combo.' },
+                autorecharge: { name_key: 'upgrade_autorecharge', upgrades: AUTORECHARGE_UPGRADES, icon: '🔄', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
+                liquid_luck: { name_key: 'upgrade_liquid_luck', upgrades: LIQUID_LUCK_UPGRADES, icon: '🧪', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
+                passive_recharge: { name_key: 'upgrade_passive_recharge', upgrades: PASSIVE_RECHARGE_UPGRADES, icon: '⏳', desc: 'Recarga la batería pasivamente con el tiempo.' },
+            };
+
+            for (const type in allUpgrades) {
+                const config = allUpgrades[type];
+                const currentLevel = state.upgradeLevels[type] || 0;
+                const nextUpgrade = currentLevel < config.upgrades.length ? config.upgrades[currentLevel] : null;
+                const card = document.createElement('div');
+                card.className = 'power-card';
+                card.innerHTML = `
+                    <div class="power-icon">${config.icon}</div>
+                    <h4 data-lang="${config.name_key}">${LANGUAGES[state.lang || 'es'][config.name_key]} (Nivel ${currentLevel})</h4>
+                    <p>${config.desc}</p>
+                    <button class="mata-btn" data-upgrade="${type}" ${!nextUpgrade || state.sig < nextUpgrade.cost ? 'disabled' : ''}>
+                        ${nextUpgrade ? `${formatNum(nextUpgrade.cost)} ΣC` : LANGUAGES[state.lang || 'es']['max_level']}
+                    </button>
+                `;
+                upgradesGrid.appendChild(card);
             }
         }
 
@@ -4843,6 +4888,23 @@
                         handleCentralClick(null);
                     }
                 }, 1000 / cps);
+            }
+        }
+
+        function updatePassiveRechargeLoop() {
+            if (passiveRechargeTimer) {
+                clearInterval(passiveRechargeTimer);
+                passiveRechargeTimer = null;
+            }
+            const level = state.upgradeLevels.passive_recharge || 0;
+            if (level > 0) {
+                const rechargeAmount = PASSIVE_RECHARGE_UPGRADES[level - 1].amount;
+                passiveRechargeTimer = setInterval(() => {
+                    if (state.powerOn && !isCharging && state.battery < state.maxBattery) {
+                        state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
+                        render(); // Update battery display
+                    }
+                }, 1000);
             }
         }
 
@@ -5677,6 +5739,7 @@
             loadState();
             checkMissionReset(); // Must be before render
             renderWheel(); // Initial check
+            updatePassiveRechargeLoop();
             translateUI();
             updateAutoClickLoop(); // CORREGIDO: Llamada a la función
             render();
@@ -6900,23 +6963,36 @@
 
             if (upgradesGrid) {
                 upgradesGrid.addEventListener('click', (e) => {
-                    const button = e.target.closest('button[data-upgrade]'); // CORREGIDO
+                    const button = e.target.closest('button[data-upgrade]');
                     if (!button) return;
 
-                    const upgradeType = button.dataset.upgrade;
-                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES };
+                    const upgradeType = button.dataset.upgrade;                    
+                    const allUpgrades = { 
+                        autoclicker: AUTOCLICKER_UPGRADES, 
+                        battery: BATTERY_UPGRADES, 
+                        critical: CRITICAL_UPGRADES, 
+                        efficiency: EFFICIENCY_UPGRADES, 
+                        combo: COMBO_UPGRADES, 
+                        liquid_luck: LIQUID_LUCK_UPGRADES,
+                        autorecharge: AUTORECHARGE_UPGRADES,
+                        passive_recharge: PASSIVE_RECHARGE_UPGRADES
+                    };
                     const upgrades = allUpgrades[upgradeType];
+                    if (!upgrades) return; // Si la mejora no existe, salir
+
                     const level = state.upgradeLevels[upgradeType] || 0;
-                    
-                    if (currentLevel < upgrades.length) {
-                        if (!state.upgradeLevels[upgradeType]) state.upgradeLevels[upgradeType] = 0;
-                        const nextUpgrade = upgrades[currentLevel]; // CORREGIDO
-                        const cost = nextUpgrade.cost;
-                        if (state.sig >= cost) {
-                            state.sig -= cost;
+
+                    if (level < upgrades.length) {
+                        const nextUpgrade = upgrades[level];
+                        if (state.sig >= nextUpgrade.cost) {
+                            state.sig -= nextUpgrade.cost;
                             state.upgradeLevels[upgradeType]++;
+
+                            // Aplicar efectos inmediatos
                             if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
+                            if (upgradeType === 'passive_recharge') updatePassiveRechargeLoop();
+
                             playSound('buySfx');
                             saveState();
                             showToast(`¡Mejora de ${upgradeType} comprada!`, 'success');
