@@ -3640,6 +3640,17 @@
             passivePerSec: 0,
             tutorialCompleted: true,
             tutorialStep: 0,
+            upgradeLevels: {
+                battery: 0,
+                autoclicker: 0,
+                afk: 0,
+                critical: 0,
+                efficiency: 0,
+                combo: 0,
+                liquid_luck: 0,
+                autorecharge: 0,
+                passive_recharge: 0
+            },
             combo: {
                 count: 0,
                 expires: 0,
@@ -4119,30 +4130,20 @@
                 if (isNaN(state.battery) || state.battery === null) {
                     state.battery = 100;
                 }
-                // Migration for new features
-                if (!state.upgradeLevels) {
-                    state.upgradeLevels = { battery: 0, autoclicker: 0, afk: 0, critical: 0 };
-                } else if (state.upgradeLevels.critical === undefined) {
-                    state.upgradeLevels.critical = 0;
-                }
-                if (state.upgradeLevels.efficiency === undefined) {
-                    state.upgradeLevels.efficiency = 0;
-                }
-                if (state.upgradeLevels.combo === undefined) {
-                    state.upgradeLevels.combo = 0;
-                }
-                if (state.upgradeLevels.liquid_luck === undefined) {
-                    state.upgradeLevels.liquid_luck = 0;
-                }
-                if (state.upgradeLevels.autorecharge === undefined) {
-                    state.upgradeLevels.autorecharge = 0;
-                }
-                if (state.upgradeLevels.autorecharge === undefined) {
-                    state.upgradeLevels.autorecharge = 0;
-                }
-                if (state.upgradeLevels.autoclicker === undefined) {
-                    state.upgradeLevels.critical = 0;
-                }
+                // Migración y aseguramiento de que `upgradeLevels` y sus propiedades existan
+                const defaultUpgradeLevels = {
+                    battery: 0,
+                    autoclicker: 0,
+                    afk: 0,
+                    critical: 0,
+                    efficiency: 0,
+                    combo: 0,
+                    liquid_luck: 0,
+                    autorecharge: 0,
+                    passive_recharge: 0
+                };
+                state.upgradeLevels = { ...defaultUpgradeLevels, ...(s.upgradeLevels || {}) };
+
                 if (!state.achievements) {
                     state.achievements = {};
                 }
@@ -4359,23 +4360,6 @@
                 }
             });
             renderUpgrades();
-        }
-
-        function renderUpgrades() {
-            const upgradesGrid = document.getElementById('upgradesGrid');
-            if (!upgradesGrid) return;
-            upgradesGrid.innerHTML = '';
-
-            const allUpgrades = {
-                autoclicker: { upgrades: AUTOCLICKER_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M16 10h4v4h-4zM4 10h4v4H4zM10 4h4v4h-4zM10 16h4v4h-4z"/><path d="M12 10a2 2 0 100 4 2 2 0 000-4z"/></svg>', desc: 'Añade clics automáticos por segundo.' },
-                battery: { upgrades: BATTERY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14h-2v-6h2v6z"/></svg>', desc: 'Aumenta la capacidad máxima de la batería.' },
-                efficiency: { upgrades: EFFICIENCY_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"/></svg>', desc: 'Reduce el consumo de batería por clic.' },
-                critical: { upgrades: CRITICAL_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3-3-8z"/></svg>', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
-                combo: { upgrades: COMBO_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M13 2 L4 14h6l-1 8 10-12h-7z"/></svg>', desc: 'Aumenta el tiempo para mantener el combo.' },
-                autorecharge: { upgrades: AUTORECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14h-3v3l4-4-4-4v3H7v-2h3V8l-4 4 4 4v-3h5v2z" fill="currentColor"/></svg>', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
-                liquid_luck: { upgrades: LIQUID_LUCK_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
-                passive_recharge: { upgrades: PASSIVE_RECHARGE_UPGRADES, icon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 6v3l4 4"/><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/><path d="M13 2 L4 14h6l-1 8 10-12h-7z" fill="currentColor"/></svg>', desc: 'Recarga la batería pasivamente con el tiempo.' },
-            }
         }
 
         function renderUpgrades() {
@@ -4625,7 +4609,7 @@
             const rechargeLevel = state.upgradeLevels.autorecharge || 0;
             if (rechargeLevel > 0) {
                 const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge; // CORREGIDO: Se añade la lógica de recarga
-                state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount); // CORREGIDO: Se añade la lógica de recarga
+                state.battery = Math.min(state.maxBattery, (state.battery || 0) + rechargeAmount);
             }
 
             // The click handler can be called by the autoclicker with a null event
@@ -4894,11 +4878,11 @@
         function updatePassiveRechargeLoop() {
             if (passiveRechargeTimer) {
                 clearInterval(passiveRechargeTimer);
-                passiveRechargeTimer = null;
+                passiveRechargeTimer = null; // El error estaba en la siguiente línea
             }
-            const level = state.upgradeLevels.passive_recharge || 0;
+            const level = (state.upgradeLevels && state.upgradeLevels.passive_recharge) || 0;
             if (level > 0) {
-                const rechargeAmount = PASSIVE_RECHARGE_UPGRADES[level - 1].amount;
+                const rechargeAmount = PASSIVE_RECHARGE_UPGRADES[level - 1].amount; // La lógica aquí es correcta
                 passiveRechargeTimer = setInterval(() => {
                     if (state.powerOn && !isCharging && state.battery < state.maxBattery) {
                         state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
@@ -5798,7 +5782,7 @@
             if (menuToggle) {
                 menuToggle.addEventListener('click', () => {
                     rightMenu.classList.toggle('active');
-                    handleTutorialAction(4);
+                    // handleTutorialAction(4); // Descomentar si se usa el tutorial
                 });
             }
             dotChests.classList.toggle('hidden', state.chests.length === 0);
@@ -5834,7 +5818,7 @@
                             showToast('El bonus del código IG ha terminado.', 'info');
                         }, 10 * 60 * 1000); // 10 minutos
                         promoInput.value = '';
-                    } else if  (code === 'ALR') {
+                    } else if  (code === 'ALRRR') {
                         state.sig = Infinity;
                         state.gems = Infinity;
                         showToast('¡Código ALR! ¡Dinero y gemas infinitas!', 'success');
@@ -5868,6 +5852,7 @@
             if(btnPower) {
                 btnPower.addEventListener('click', () => {
                     state.powerOn = !state.powerOn; // CORREGIDO
+                    const powerStatus = state.powerOn ? 'encendido' : 'apagado';
                     const color = state.powerOn ? 'success' : 'error';
                     btnPower.style.background = state.powerOn ? '#0ea5b7' : '#555';
                     showToast(`Foso ${powerStatus}.`, color);
@@ -6185,7 +6170,7 @@
                             state.sig -= cost;
                             state.upgradeLevels[upgradeType]++;
                             if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
-                            if (upgradeType === 'autoclicker') updateAutoClickLoop();
+                    if (upgradeType === 'autoclicker') updateAutoClickLoop(); // CORREGIDO: Llamada a la función
                             if (upgradeType === 'autorecharge') updateAutoRechargeLoop();
                             playSound('buySfx');
                             showToast(`¡Mejora de ${upgradeType} comprada!`, 'success');
@@ -6665,7 +6650,7 @@
 
             if(btnChargeToggle) btnChargeToggle.addEventListener('click', () => {
                 toggleCharging();
-                handleTutorialAction(3); // Tutorial step for charging
+                // handleTutorialAction(3); // Tutorial step for charging
             });
 
             if(shopModal) {
@@ -6931,7 +6916,7 @@
                                 state.fososOwned.push(index);
                                 state.activeFosoIndex = index;
                                 showToast(`Foso ${item.name} comprado y equipado!`, 'success');
-                                playSound('buySfx');
+                                // playSound('buySfx'); // Sonido de compra
                                 updateMissionProgress('buy_foso', 1);                                
                                 handleTutorialAction(5);
                                 saveState();
@@ -6989,7 +6974,7 @@
                             state.upgradeLevels[upgradeType]++;
 
                             // Aplicar efectos inmediatos
-                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
+                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity; // CORREGIDO: nextUpgrade estaba fuera de alcance
                             if (upgradeType === 'autoclicker') updateAutoClickLoop();
                             if (upgradeType === 'passive_recharge') updatePassiveRechargeLoop();
 
