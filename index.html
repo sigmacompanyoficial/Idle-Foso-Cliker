@@ -110,7 +110,7 @@
   .icon-20{width:20px;height:20px}
 
   .panel{background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(100, 116, 139, 0.3); border-top: 2px solid var(--accent);}
-  .shopGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px;max-height:520px;overflow:auto;padding-right:6px}
+  .shopGrid{display:grid;grid-template-columns:repeat(5, 1fr);gap:10px;margin-top:10px;overflow:auto;padding-right:6px}
   /* Tarjetas de tienda estilo "Senior" */
   .shopCard{background:var(--panel);padding:8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:1px solid rgba(100, 116, 139, 0.4); transition: all 0.2s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);}
 
@@ -120,6 +120,7 @@
     background: rgba(15, 23, 42, 0.5);
     border-radius: 10px;
     padding: 12px;
+    width: 18rem;
     display: flex; flex-direction: column; /* Asegura el layout de columna flexible */
   }
   #chatPanel h3 { margin: 0 0 10px 0; color: var(--accent, #22d3ee); font-weight: 800; display:flex; align-items:center; gap:8px; }
@@ -235,7 +236,7 @@
     cursor: pointer;
     font-weight: bold;
   }
-  .shopCard:hover { transform: translateY(-2px); box-shadow: 0 0 15px -3px var(--accent), inset 0 1px 0 rgba(255,255,255,0.03); border-color: var(--accent);}
+  .shopCard:hover { box-shadow: 0 0 15px -3px var(--accent), inset 0 1px 0 rgba(255,255,255,0.03); border-color: var(--accent);}
   .shopCard img, .shopCard svg{width:72px;height:auto}
   .priceTag{background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:6px;font-weight:700;font-size:13px}
   .hint{color:var(--muted);font-size:13px; line-height: 1.4; margin: 0;}
@@ -287,7 +288,7 @@
   .modal-title { font-weight:800; letter-spacing:.2px; }
   .close-btn { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; cursor:pointer; color:#9fb2c8; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); }
   .close-btn:hover { background:rgba(255,255,255,0.08); color:#fff; }
-  .modal-body { overflow:auto; max-height: calc(84vh - 56px); padding-top:12px; }
+  .modal-body { overflow:auto; max-height: calc(84vh - 68px); padding-top:12px; }
   @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
   .modal.closing .modal-content {
     animation: modalOut 0.3s ease forwards;
@@ -321,10 +322,6 @@
   margin: 0;
   font-size: 12px;
   transition: transform 0.2s, box-shadow 0.2s;
-}
-.power-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 12px #0ff;
 }
 .power-card button:disabled {
   background: #444; color:#999; cursor: not-allowed;
@@ -868,6 +865,13 @@
                 <div class="metaTiny"><span data-lang="total_clicks">Clicks totales</span>: <span id="totalClicks">0</span></div>
             </div>
 
+            <!-- Moneda Exclusiva -->
+            <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M5 16L3 5l5.5 5L12 3l3.5 7L21 5l-2 11H5zm14 3H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2z"/></svg>
+            <div>
+                <div class="bigCounter"><span id="exclusiveMoneyTotal">0</span> 👑</div>
+                <div class="metaTiny" data-lang="exclusive_currency">Moneda Exclusiva</div>
+            </div>
+
             <!-- Racha Diaria -->
             <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             <div>
@@ -1164,21 +1168,30 @@
 
   // Botones UI
   btnSaveNow.addEventListener("click", async () => {
+    const oldName = localStorage.getItem('playerName') || localPlayerId;
     const newName = playerNameInput.value.trim();
-    if (!newName || newName.startsWith("Jugador#")) {
-        registerPrompt.style.display = 'block';
-        showToast("Por favor, introduce un nombre válido.", "error");
+    if (!newName) {
+        showToast("El nombre no puede estar vacío.", "error");
         return;
     }
 
-    const oldName = localStorage.getItem('playerName') || localPlayerId;
+    // Si el nombre ha cambiado y no es la primera vez (ya hay un nombre guardado)
+    if (newName !== oldName && localStorage.getItem('playerName')) {
+        if ((state.exclusiveMoney || 0) < 1000) {
+            showToast("Necesitas 1000 👑 para cambiar tu nombre.", "error");
+            playerNameInput.value = oldName; // Revertir al nombre anterior
+            return;
+        }
+        state.exclusiveMoney -= 1000;
+        showToast("-1000 👑 por cambiar de nombre.", "info");
+    }
 
     // Comprobar si el nombre ya existe
     const playersSnapshot = await get(ref(db, 'players'));
     const playersData = playersSnapshot.val() || {};
     const existingPlayer = Object.values(playersData).find(p => p.name.toLowerCase() === newName.toLowerCase());
 
-    if (existingPlayer && existingPlayer.name !== oldName) {
+    if (existingPlayer && existingPlayer.name.toLowerCase() !== oldName.toLowerCase()) {
         showToast(`El nombre "${newName}" ya está en uso. Elige otro.`, "error");
     } else {
         // Guardar el nombre localmente
@@ -2443,56 +2456,710 @@
   <div style="font-weight:700" data-lang="foso_46_name">Foso Yousef 👑</div>
   <div class="priceTag" data-cost="Infinity">Ruleta</div>
 </div>
-
-<!-- --- SECCION: Sabores Especiales (Consumibles) --- -->
-<div style="grid-column:1/-1; font-weight:800; margin-top:10px; padding-top:8px; border-top:1px solid rgba(46, 204, 113, 0.3)" data-lang="special_flavors">
-  <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-  Sabores Especiales (Consumibles)
+<!-- 47 -->
+<div class="shopCard" data-index="47" title="Foso 48: Chronos Key ⏳ (2Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-47">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g48_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth48_shop)"/>
+    <defs>
+      <linearGradient id="g48_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DAA520"/><stop offset="100%" stop-color="#B8860B"/></linearGradient>
+      <linearGradient id="mouth48_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_47_name">Foso 48: Chronos Key ⏳</div>
+  <div class="priceTag" data-cost="2e24">2Sp ΣC</div>
 </div>
-
-<div class="shopCard" data-flavor-id="mint_burst" title="Aumenta la probabilidad de crítico en +5% durante 2 minutos.">
-  <div style="font-size: 32px;">🌿💥</div>
-  <div style="font-weight:700">Ráfaga de Menta</div>
-  <div class="priceTag" data-cost="500000">500K ΣC</div>
+<!-- 48 -->
+<div class="shopCard" data-index="48" title="Foso 49: Quantum Foam 🔬 (6Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-48">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g49_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth49_shop)"/>
+    <defs>
+      <linearGradient id="g49_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#48D1CC"/><stop offset="100%" stop-color="#20B2AA"/></linearGradient>
+      <linearGradient id="mouth49_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_48_name">Foso 49: Quantum Foam 🔬</div>
+  <div class="priceTag" data-cost="6e24">6Sp ΣC</div>
 </div>
-<div class="shopCard" data-flavor-id="strawberry_boost" title="Aumenta las ganancias de ΣC en +50% durante 5 minutos."><svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #e74c3c;"><path d="M12 2C8.686 2 6 4.686 6 8c0 4 6 12 6 12s6-8 6-12c0-3.314-2.686-6-6-6zm0 8c-1.105 0-2-.895-2-2s.895-2 2-2 2 .895 2 2-.895 2-2 2z"/></svg><div style="font-weight:700">Impulso de Fresa</div><div class="priceTag" data-cost="2000000">2M ΣC</div></div>
-<div class="shopCard" data-flavor-id="gem_essence" title="Aumenta la probabilidad de encontrar gemas en +1% durante 10 minutos.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #3498db;"><path d="M12 2l-2.5 5.5L4 9l4.5 4.5L7 19l5-3.5 5 3.5-1.5-5.5L20 9l-5.5-1.5z"/></svg>
-  <div style="font-weight:700">Esencia de Gema</div>
-  <div class="priceTag gem-price" data-cost="50">50 💎</div>
+<!-- 49 -->
+<div class="shopCard" data-index="49" title="Foso 50: Solar Flare ☀️ (20Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-49">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g50_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth50_shop)"/>
+    <defs>
+      <linearGradient id="g50_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#FFD700"/></linearGradient>
+      <linearGradient id="mouth50_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_49_name">Foso 50: Solar Flare ☀️</div>
+  <div class="priceTag" data-cost="2e25">20Sp ΣC</div>
 </div>
-<div class="shopCard" data-flavor-id="tycoon_elixir" title="Aumenta TODAS las ganancias de ΣC en +100% durante 15 minutos.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #f1c40f;"><path d="M5 16L3 5l5.5 5L12 3l3.5 7L21 5l-2 11H5zm14 3H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2z"/></svg>
-  <div style="font-weight:700">Elixir del Magnate</div>
-  <div class="priceTag gem-price" data-cost="150">150 💎</div>
+<!-- 50 -->
+<div class="shopCard" data-index="50" title="Foso 51: Dark Matter ⬛ (60Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-50">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g51_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth51_shop)"/>
+    <defs>
+      <linearGradient id="g51_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F4F4F"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="mouth51_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_50_name">Foso 51: Dark Matter ⬛</div>
+  <div class="priceTag" data-cost="6e25">60Sp ΣC</div>
 </div>
-
-<div class="shopCard" data-flavor-id="battery_chew" title="Reduce el consumo de batería en un 50% durante 10 minutos.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #2ecc71;"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14h-2v-6h2v6z"/></svg>
-  <div style="font-weight:700">Chicle de Batería</div>
-  <div class="priceTag" data-cost="10000000">10M ΣC</div>
+<!-- 51 -->
+<div class="shopCard" data-index="51" title="Foso 52: Plasma Core ⚡ (200Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-51">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g52_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth52_shop)"/>
+    <defs>
+      <linearGradient id="g52_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF00FF"/><stop offset="100%" stop-color="#00FFFF"/></linearGradient>
+      <linearGradient id="mouth52_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_51_name">Foso 52: Plasma Core ⚡</div>
+  <div class="priceTag" data-cost="2e26">200Sp ΣC</div>
 </div>
-<div class="shopCard" data-flavor-id="repair_tonic" title="Repara instantáneamente el 25% de la condición de tu foso actual.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #95a5a6;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.4-2.4c.4-.4.4-1 0-1.4z"/></svg>
-  <div style="font-weight:700">Tónico de Reparación</div>
-  <div class="priceTag" data-cost="25000000">25M ΣC</div>
+<!-- 52 -->
+<div class="shopCard" data-index="52" title="Foso 53: Neutron Star 🌟 (600Sp ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-52">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g53_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth53_shop)"/>
+    <defs>
+      <linearGradient id="g53_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E6E6FA"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
+      <linearGradient id="mouth53_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_52_name">Foso 53: Neutron Star 🌟</div>
+  <div class="priceTag" data-cost="6e26">600Sp ΣC</div>
 </div>
-<div class="shopCard" data-flavor-id="chest_magnet" title="Aumenta la probabilidad de encontrar cofres en +5% durante 10 minutos.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #e67e22;"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 13H8v-2h4v2zm0-3H8v-2h4v2zm0-3H8V9h4v2zm4 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V9h2v2z"/></svg>
-  <div style="font-weight:700">Imán de Cofres</div>
-  <div class="priceTag gem-price" data-cost="75">75 💎</div>
+<!-- 53 -->
+<div class="shopCard" data-index="53" title="Foso 54: White Hole ⚪ (2Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-53">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g54_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth54_shop)"/>
+    <defs>
+      <linearGradient id="g54_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#F0F8FF"/></linearGradient>
+      <linearGradient id="mouth54_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_53_name">Foso 54: White Hole ⚪</div>
+  <div class="priceTag" data-cost="2e27">2Oc ΣC</div>
 </div>
-<div class="shopCard" data-flavor-id="time_potion" title="Otorga instantáneamente 1 hora de ganancias AFK.">
-  <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #8e44ad;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 14H11v-6h2v4h1.5v2z"/></svg>
-  <div style="font-weight:700">Poción del Tiempo</div>
-  <div class="priceTag gem-price" data-cost="200">200 💎</div>
+<!-- 54 -->
+<div class="shopCard" data-index="54" title="Foso 55: Wormhole 🌀 (6Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-54">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g55_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth55_shop)"/>
+    <defs>
+      <linearGradient id="g55_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8A2BE2"/><stop offset="100%" stop-color="#4B0082"/></linearGradient>
+      <linearGradient id="mouth55_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_54_name">Foso 55: Wormhole 🌀</div>
+  <div class="priceTag" data-cost="6e27">6Oc ΣC</div>
 </div>
+<!-- 55 -->
+<div class="shopCard" data-index="55" title="Foso 56: Multiverse 🌌 (20Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-55">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g56_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth56_shop)"/>
+    <defs>
+      <linearGradient id="g56_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00008B"/><stop offset="100%" stop-color="#191970"/></linearGradient>
+      <linearGradient id="mouth56_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_55_name">Foso 56: Multiverse 🌌</div>
+  <div class="priceTag" data-cost="2e28">20Oc ΣC</div>
+</div>
+<!-- 56 -->
+<div class="shopCard" data-index="56" title="Foso 57: Hyperdrive 🚀 (60Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-56">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g57_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth57_shop)"/>
+    <defs>
+      <linearGradient id="g57_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C0C0C0"/><stop offset="100%" stop-color="#808080"/></linearGradient>
+      <linearGradient id="mouth57_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_56_name">Foso 57: Hyperdrive 🚀</div>
+  <div class="priceTag" data-cost="6e28">60Oc ΣC</div>
+</div>
+<!-- 57 -->
+<div class="shopCard" data-index="57" title="Foso 58: Dyson Sphere ☀️ (200Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-57">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g58_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth58_shop)"/>
+    <defs>
+      <linearGradient id="g58_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFA500"/></linearGradient>
+      <linearGradient id="mouth58_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_57_name">Foso 58: Dyson Sphere ☀️</div>
+  <div class="priceTag" data-cost="2e29">200Oc ΣC</div>
+</div>
+<!-- 58 -->
+<div class="shopCard" data-index="58" title="Foso 59: Galactic Core 🌌 (600Oc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-58">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g59_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth59_shop)"/>
+    <defs>
+      <linearGradient id="g59_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4B0082"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="mouth59_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_58_name">Foso 59: Galactic Core 🌌</div>
+  <div class="priceTag" data-cost="6e29">600Oc ΣC</div>
+</div>
+<!-- 59 -->
+<div class="shopCard" data-index="59" title="Foso 60: The Big Bang 💥 (2No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-59">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g60_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth60_shop)"/>
+    <defs>
+      <linearGradient id="g60_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#FFFF00"/></linearGradient>
+      <linearGradient id="mouth60_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_59_name">Foso 60: The Big Bang 💥</div>
+  <div class="priceTag" data-cost="2e30">2No ΣC</div>
+</div>
+<!-- 60 -->
+<div class="shopCard" data-index="60" title="Foso 61: Genesis Block 🧱 (6No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-60">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g61_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth61_shop)"/>
+    <defs>
+      <linearGradient id="g61_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A9A9A9"/><stop offset="100%" stop-color="#696969"/></linearGradient>
+      <linearGradient id="mouth61_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_60_name">Foso 61: Genesis Block 🧱</div>
+  <div class="priceTag" data-cost="6e30">6No ΣC</div>
+</div>
+<!-- 61 -->
+<div class="shopCard" data-index="61" title="Foso 62: Alpha Centauri ⭐ (20No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-61">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g62_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth62_shop)"/>
+    <defs>
+      <linearGradient id="g62_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFA500"/></linearGradient>
+      <linearGradient id="mouth62_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_61_name">Foso 62: Alpha Centauri ⭐</div>
+  <div class="priceTag" data-cost="2e31">20No ΣC</div>
+</div>
+<!-- 62 -->
+<div class="shopCard" data-index="62" title="Foso 63: Andromeda 🌌 (60No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-62">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g63_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth63_shop)"/>
+    <defs>
+      <linearGradient id="g63_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#483D8B"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="mouth63_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_62_name">Foso 63: Andromeda 🌌</div>
+  <div class="priceTag" data-cost="6e31">60No ΣC</div>
+</div>
+<!-- 63 -->
+<div class="shopCard" data-index="63" title="Foso 64: Orion Nebula 🔭 (200No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-63">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g64_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth64_shop)"/>
+    <defs>
+      <linearGradient id="g64_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DA70D6"/><stop offset="100%" stop-color="#8A2BE2"/></linearGradient>
+      <linearGradient id="mouth64_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_63_name">Foso 64: Orion Nebula 🔭</div>
+  <div class="priceTag" data-cost="2e32">200No ΣC</div>
+</div>
+<!-- 64 -->
+<div class="shopCard" data-index="64" title="Foso 65: Pillars of Creation 🏛️ (600No ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-64">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g65_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth65_shop)"/>
+    <defs>
+      <linearGradient id="g65_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D2B48C"/><stop offset="100%" stop-color="#8B4513"/></linearGradient>
+      <linearGradient id="mouth65_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_64_name">Foso 65: Pillars of Creation 🏛️</div>
+  <div class="priceTag" data-cost="6e32">600No ΣC</div>
+</div>
+<!-- 65 -->
+<div class="shopCard" data-index="65" title="Foso 66: Event Horizon 🌀 (2Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-65">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g66_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth66_shop)"/>
+    <defs>
+      <linearGradient id="g66_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000000"/><stop offset="100%" stop-color="#4B0082"/></linearGradient>
+      <linearGradient id="mouth66_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_65_name">Foso 66: Event Horizon 🌀</div>
+  <div class="priceTag" data-cost="2e33">2Dc ΣC</div>
+</div>
+<!-- 66 -->
+<div class="shopCard" data-index="66" title="Foso 67: God Particle ✨ (6Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-66">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g67_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth67_shop)"/>
+    <defs>
+      <linearGradient id="g67_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
+      <linearGradient id="mouth67_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_66_name">Foso 67: God Particle ✨</div>
+  <div class="priceTag" data-cost="6e33">6Dc ΣC</div>
+</div>
+<!-- 67 -->
+<div class="shopCard" data-index="67" title="Foso 68: String Theory 🎻 (20Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-67">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g68_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth68_shop)"/>
+    <defs>
+      <linearGradient id="g68_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C0C0C0"/><stop offset="100%" stop-color="#808080"/></linearGradient>
+      <linearGradient id="mouth68_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_67_name">Foso 68: String Theory 🎻</div>
+  <div class="priceTag" data-cost="2e34">20Dc ΣC</div>
+</div>
+<!-- 68 -->
+<div class="shopCard" data-index="68" title="Foso 69: M-Theory 🧠 (60Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-68">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g69_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth69_shop)"/>
+    <defs>
+      <linearGradient id="g69_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00008B"/><stop offset="100%" stop-color="#0000CD"/></linearGradient>
+      <linearGradient id="mouth69_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_68_name">Foso 69: M-Theory 🧠</div>
+  <div class="priceTag" data-cost="6e34">60Dc ΣC</div>
+</div>
+<!-- 69 -->
+<div class="shopCard" data-index="69" title="Foso 70: The Matrix 🟩 (200Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-69">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g70_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth70_shop)"/>
+    <defs>
+      <linearGradient id="g70_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00FF00"/><stop offset="100%" stop-color="#006400"/></linearGradient>
+      <linearGradient id="mouth70_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_69_name">Foso 70: The Matrix 🟩</div>
+  <div class="priceTag" data-cost="2e35">200Dc ΣC</div>
+</div>
+<!-- 70 -->
+<div class="shopCard" data-index="70" title="Foso 71: The Architect 📐 (600Dc ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-70">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g71_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth71_shop)"/>
+    <defs>
+      <linearGradient id="g71_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F5F5F5"/><stop offset="100%" stop-color="#A9A9A9"/></linearGradient>
+      <linearGradient id="mouth71_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_70_name">Foso 71: The Architect 📐</div>
+  <div class="priceTag" data-cost="6e35">600Dc ΣC</div>
+</div>
+<!-- 72 -->
+<div class="shopCard" data-index="71" title="Foso 72: The Oracle 🔮 (2e36 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-71">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g72_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth72_shop)"/>
+    <defs>
+      <linearGradient id="g72_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9400D3"/><stop offset="100%" stop-color="#4B0082"/></linearGradient>
+      <linearGradient id="mouth72_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_71_name">Foso 72: The Oracle 🔮</div>
+  <div class="priceTag" data-cost="2e36">2e36 ΣC</div>
+</div>
+<!-- 73 -->
+<div class="shopCard" data-index="72" title="Foso 73: The One  Neo 🕶️ (6e36 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-72">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g73_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth73_shop)"/>
+    <defs>
+      <linearGradient id="g73_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000000"/><stop offset="100%" stop-color="#006400"/></linearGradient>
+      <linearGradient id="mouth73_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_72_name">Foso 73: The One 🕶️</div>
+  <div class="priceTag" data-cost="6e36">6e36 ΣC</div>
+</div>
+<!-- 74 -->
+<div class="shopCard" data-index="73" title="Foso 74: The Source 💻 (2e37 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-73">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g74_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth74_shop)"/>
+    <defs>
+      <linearGradient id="g74_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00BFFF"/><stop offset="100%" stop-color="#1E90FF"/></linearGradient>
+      <linearGradient id="mouth74_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_73_name">Foso 74: The Source 💻</div>
+  <div class="priceTag" data-cost="2e37">2e37 ΣC</div>
+</div>
+<!-- 75 -->
+<div class="shopCard" data-index="74" title="Foso 75: The Glitch 🐞 (6e37 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-74">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g75_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth75_shop)"/>
+    <defs>
+      <linearGradient id="g75_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF0000"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="mouth75_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_74_name">Foso 75: The Glitch 🐞</div>
+  <div class="priceTag" data-cost="6e37">6e37 ΣC</div>
+</div>
+<!-- 76 -->
+<div class="shopCard" data-index="75" title="Foso 76: The Anomaly ❓ (2e38 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-75">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g76_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth76_shop)"/>
+    <defs>
+      <linearGradient id="g76_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#800080"/><stop offset="100%" stop-color="#FF00FF"/></linearGradient>
+      <linearGradient id="mouth76_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_75_name">Foso 76: The Anomaly ❓</div>
+  <div class="priceTag" data-cost="2e38">2e38 ΣC</div>
+</div>
+<!-- 77 -->
+<div class="shopCard" data-index="76" title="Foso 77: The Prophecy 📜 (6e38 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-76">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g77_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth77_shop)"/>
+    <defs>
+      <linearGradient id="g77_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F5DEB3"/><stop offset="100%" stop-color="#D2B48C"/></linearGradient>
+      <linearGradient id="mouth77_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_76_name">Foso 77: The Prophecy 📜</div>
+  <div class="priceTag" data-cost="6e38">6e38 ΣC</div>
+</div>
+<!-- 78 -->
+<div class="shopCard" data-index="77" title="Foso 78: The Chosen One 👑 (2e39 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-77">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g78_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth78_shop)"/>
+    <defs>
+      <linearGradient id="g78_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#B8860B"/></linearGradient>
+      <linearGradient id="mouth78_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_77_name">Foso 78: The Chosen One 👑</div>
+  <div class="priceTag" data-cost="2e39">2e39 ΣC</div>
+</div>
+<!-- 79 -->
+<div class="shopCard" data-index="78" title="Foso 79: The Resistance ✊ (6e39 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-78">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g79_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth79_shop)"/>
+    <defs>
+      <linearGradient id="g79_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B22222"/><stop offset="100%" stop-color="#800000"/></linearGradient>
+      <linearGradient id="mouth79_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_78_name">Foso 79: The Resistance ✊</div>
+  <div class="priceTag" data-cost="6e39">6e39 ΣC</div>
+</div>
+<!-- 80 -->
+<div class="shopCard" data-index="79" title="Foso 80: The Revolution 💥 (2e40 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-79">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g80_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth80_shop)"/>
+    <defs>
+      <linearGradient id="g80_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#FF0000"/></linearGradient>
+      <linearGradient id="mouth80_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_79_name">Foso 80: The Revolution 💥</div>
+  <div class="priceTag" data-cost="2e40">2e40 ΣC</div>
+</div>
+<!-- 81 -->
+<div class="shopCard" data-index="80" title="Foso 81: The Aftermath 잿 (6e40 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-80">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g81_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth81_shop)"/>
+    <defs>
+      <linearGradient id="g81_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#808080"/><stop offset="100%" stop-color="#2F4F4F"/></linearGradient>
+      <linearGradient id="mouth81_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_80_name">Foso 81: The Aftermath 잿</div>
+  <div class="priceTag" data-cost="6e40">6e40 ΣC</div>
+</div>
+<!-- 82 -->
+<div class="shopCard" data-index="81" title="Foso 82: The New Beginning 🌱 (2e41 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-81">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g82_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth82_shop)"/>
+    <defs>
+      <linearGradient id="g82_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#98FB98"/><stop offset="100%" stop-color="#3CB371"/></linearGradient>
+      <linearGradient id="mouth82_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_81_name">Foso 82: The New Beginning 🌱</div>
+  <div class="priceTag" data-cost="2e41">2e41 ΣC</div>
+</div>
+<!-- 83 -->
+<div class="shopCard" data-index="82" title="Foso 83: The Utopia 🏞️ (6e41 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-82">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g83_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth83_shop)"/>
+    <defs>
+      <linearGradient id="g83_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#00BFFF"/></linearGradient>
+      <linearGradient id="mouth83_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_82_name">Foso 83: The Utopia 🏞️</div>
+  <div class="priceTag" data-cost="6e41">6e41 ΣC</div>
+</div>
+<!-- 84 -->
+<div class="shopCard" data-index="83" title="Foso 84: The Dystopia 🏙️ (2e42 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-83">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g84_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth84_shop)"/>
+    <defs>
+      <linearGradient id="g84_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#708090"/><stop offset="100%" stop-color="#2F4F4F"/></linearGradient>
+      <linearGradient id="mouth84_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_83_name">Foso 84: The Dystopia 🏙️</div>
+  <div class="priceTag" data-cost="2e42">2e42 ΣC</div>
+</div>
+<!-- 85 -->
+<div class="shopCard" data-index="84" title="Foso 85: The Simulation 💻 (6e42 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-84">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g85_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth85_shop)"/>
+    <defs>
+      <linearGradient id="g85_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00FF7F"/><stop offset="100%" stop-color="#008080"/></linearGradient>
+      <linearGradient id="mouth85_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_84_name">Foso 85: The Simulation 💻</div>
+  <div class="priceTag" data-cost="6e42">6e42 ΣC</div>
+</div>
+<!-- 86 -->
+<div class="shopCard" data-index="85" title="Foso 86: The Dream 😴 (2e43 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-85">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g86_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth86_shop)"/>
+    <defs>
+      <linearGradient id="g86_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E6E6FA"/><stop offset="100%" stop-color="#D8BFD8"/></linearGradient>
+      <linearGradient id="mouth86_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_85_name">Foso 86: The Dream 😴</div>
+  <div class="priceTag" data-cost="2e43">2e43 ΣC</div>
+</div>
+<!-- 87 -->
+<div class="shopCard" data-index="86" title="Foso 87: The Nightmare 👹 (6e43 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-86">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g87_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth87_shop)"/>
+    <defs>
+      <linearGradient id="g87_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8B0000"/><stop offset="100%" stop-color="#000000"/></linearGradient>
+      <linearGradient id="mouth87_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_86_name">Foso 87: The Nightmare 👹</div>
+  <div class="priceTag" data-cost="6e43">6e43 ΣC</div>
+</div>
+<!-- 88 -->
+<div class="shopCard" data-index="87" title="Foso 88: The Awakening 🌅 (2e44 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-87">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g88_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth88_shop)"/>
+    <defs>
+      <linearGradient id="g88_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFDAB9"/><stop offset="100%" stop-color="#FFA07A"/></linearGradient>
+      <linearGradient id="mouth88_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_87_name">Foso 88: The Awakening 🌅</div>
+  <div class="priceTag" data-cost="2e44">2e44 ΣC</div>
+</div>
+<!-- 89 -->
+<div class="shopCard" data-index="88" title="Foso 89: The Enlightenment 💡 (6e44 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-88">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g89_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth89_shop)"/>
+    <defs>
+      <linearGradient id="g89_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFE0"/><stop offset="100%" stop-color="#FFD700"/></linearGradient>
+      <linearGradient id="mouth89_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_88_name">Foso 89: The Enlightenment 💡</div>
+  <div class="priceTag" data-cost="6e44">6e44 ΣC</div>
+</div>
+<!-- 90 -->
+<div class="shopCard" data-index="89" title="Foso 90: The Ascension 🚀 (2e45 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-89">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g90_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth90_shop)"/>
+    <defs>
+      <linearGradient id="g90_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ADD8E6"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
+      <linearGradient id="mouth90_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_89_name">Foso 90: The Ascension 🚀</div>
+  <div class="priceTag" data-cost="2e45">2e45 ΣC</div>
+</div>
+<!-- 91 -->
+<div class="shopCard" data-index="90" title="Foso 91: The Godhood ✨ (6e45 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-90">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g91_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth91_shop)"/>
+    <defs>
+      <linearGradient id="g91_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
+      <linearGradient id="mouth91_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_90_name">Foso 91: The Godhood ✨</div>
+  <div class="priceTag" data-cost="6e45">6e45 ΣC</div>
+</div>
+<!-- 92 -->
+<div class="shopCard" data-index="91" title="Foso 92: The Beyond 🌌 (2e46 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-91">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g92_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth92_shop)"/>
+    <defs>
+      <linearGradient id="g92_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000000"/><stop offset="100%" stop-color="#4B0082"/></linearGradient>
+      <linearGradient id="mouth92_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_91_name">Foso 92: The Beyond 🌌</div>
+  <div class="priceTag" data-cost="2e46">2e46 ΣC</div>
+</div>
+<!-- 93 -->
+<div class="shopCard" data-index="92" title="Foso 93: The Omega Point 🎯 (6e46 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-92">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g93_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth93_shop)"/>
+    <defs>
+      <linearGradient id="g93_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4500"/><stop offset="100%" stop-color="#DC143C"/></linearGradient>
+      <linearGradient id="mouth93_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_92_name">Foso 93: The Omega Point 🎯</div>
+  <div class="priceTag" data-cost="6e46">6e46 ΣC</div>
+</div>
+<!-- 94 -->
+<div class="shopCard" data-index="93" title="Foso 94: The Final Foso 🏁 (2e47 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-93">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g94_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth94_shop)"/>
+    <defs>
+      <linearGradient id="g94_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C0C0C0"/><stop offset="100%" stop-color="#FFFFFF"/></linearGradient>
+      <linearGradient id="mouth94_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_93_name">Foso 94: The Final Foso 🏁</div>
+  <div class="priceTag" data-cost="2e47">2e47 ΣC</div>
+</div>
+<!-- 95 -->
+<div class="shopCard" data-index="94" title="Foso 95: The Post-Game 🎮 (6e47 ΣC)">
+  <svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-94">
+    <rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g95_shop)"/>
+    <rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth95_shop)"/>
+    <defs>
+      <linearGradient id="g95_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0000CD"/><stop offset="100%" stop-color="#000080"/></linearGradient>
+      <linearGradient id="mouth95_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient>
+    </defs>
+  </svg>
+  <div style="font-weight:700" data-lang="foso_94_name">Foso 95: The Post-Game 🎮</div>
+  <div class="priceTag" data-cost="6e47">6e47 ΣC</div>
+</div>
+<!-- 96 -->
+<div class="shopCard" data-index="95" title="Foso 96: The Credits 📜 (2e48 ΣC)"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-95"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g96_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth96_shop)"/><defs><linearGradient id="g96_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F4F4F"/><stop offset="100%" stop-color="#000000"/></linearGradient><linearGradient id="mouth96_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700" data-lang="foso_95_name">Foso 96: The Credits 📜</div><div class="priceTag" data-cost="2e48">2e48 ΣC</div></div>
 
 <!-- --- SECCION: Fosos de Gema --- -->
 <div style="grid-column:1/-1; font-weight:800; margin-top:10px; padding-top:8px; border-top:1px solid rgba(245, 158, 11, 0.3)" data-lang="gem_fosos">
   <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path fill="#f1c40f" d="M12 2l-2.5 5.5L4 9l4.5 4.5L7 19l5-3.5 5 3.5-1.5-5.5L20 9l-5.5-1.5z"/></svg>
   Fosos de Gema (+5% Ganancias c/u)
 </div>
+
+      </div>
+      
+      <!-- --- SECCION: Fosos Exclusivos --- -->
+      <div style="grid-column:1/-1; font-weight:800; margin-top:20px; padding-top:8px; border-top:1px solid rgba(239, 68, 68, 0.4)" data-lang="exclusive_fosos">
+        <svg class="icon" style="width:16px; height:16px; color: #ef4444;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Fosos Exclusivos
+      </div>
+      <div class="shopGrid" id="exclusiveShopGrid">
+        <!-- Foso Pollo (Exclusivo Ruleta) -->
+        <div class="shopCard" data-index="45" title="Foso Pollo 🍗 (Exclusivo de la Ruleta)" style="display: none;"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-45"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g46_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth46_shop)"/><defs><linearGradient id="g46_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ADFF2F"/><stop offset="100%" stop-color="#006400"/></linearGradient><linearGradient id="mouth46_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#444"/><stop offset="100%" stop-color="#111"/></linearGradient></defs></svg><div style="font-weight:700" data-lang="foso_45_name">Foso Pollo 🍗</div><div class="priceTag" data-cost="Infinity">Ruleta</div></div>
+        <!-- Foso Yousef (Exclusivo Ruleta) -->
+        <div class="shopCard" data-index="46" title="Foso Yousef 👑 (Exclusivo de la Ruleta)" style="display: none;"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-46"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g47_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth47_shop)"/><defs><linearGradient id="g47_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffd700"/><stop offset="100%" stop-color="#f0a500"/></linearGradient><linearGradient id="mouth47_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a2c00"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700" data-lang="foso_46_name">Foso Yousef 👑</div><div class="priceTag" data-cost="Infinity">Ruleta</div></div>
+        <!-- Foso Dyland -->
+        <div class="shopCard" data-index="96" title="Foso Dyland 👾"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-96"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g97_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth97_shop)"/><defs><linearGradient id="g97_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8e44ad"/><stop offset="100%" stop-color="#341f97"/></linearGradient><linearGradient id="mouth97_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Dyland 👾</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Foso Aziz -->
+        <div class="shopCard" data-index="97" title="Foso Aziz 👓"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-97"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g98_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth98_shop)"/><defs><linearGradient id="g98_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c0392b"/><stop offset="100%" stop-color="#e74c3c"/></linearGradient><linearGradient id="mouth98_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Aziz 👓</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Foso Ali -->
+        <div class="shopCard" data-index="98" title="Foso Ali ❄️"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-98"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g99_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth99_shop)"/><defs><linearGradient id="g99_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ecf0f1"/><stop offset="100%" stop-color="#bdc3c7"/></linearGradient><linearGradient id="mouth99_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Ali ❄️</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Estuche David Calls -->
+        <div class="shopCard" data-index="99" title="Foso David Calls 📱"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-99"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g100_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth100_shop)"/><defs><linearGradient id="g100_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3498db"/><stop offset="100%" stop-color="#2980b9"/></linearGradient><linearGradient id="mouth100_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso David Calls 📱</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Foso Esteva -->
+        <div class="shopCard" data-index="100" title="Foso Esteva ⚡"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-100"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g101_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth101_shop)"/><defs><linearGradient id="g101_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f1c40f"/><stop offset="100%" stop-color="#f39c12"/></linearGradient><linearGradient id="mouth101_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Esteva ⚡</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Foso Calfa -->
+        <div class="shopCard" data-index="101" title="Foso Calfa 💸"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-101"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g102_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth102_shop)"/><defs><linearGradient id="g102_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#27ae60"/><stop offset="100%" stop-color="#2ecc71"/></linearGradient><linearGradient id="mouth102_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Calfa 💸</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+        <!-- Foso Discord -->
+        <div class="shopCard" data-index="102" title="Foso Discord 💬"><svg viewBox="0 0 100 260" xmlns="http://www.w3.org/2000/svg" id="foso-svg-102"><rect x="20" y="20" width="60" height="220" rx="12" fill="url(#g103_shop)"/><rect x="20" y="0" width="60" height="20" rx="10" fill="url(#mouth103_shop)"/><defs><linearGradient id="g103_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5865F2"/><stop offset="100%" stop-color="#4e5bf0"/></linearGradient><linearGradient id="mouth103_shop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c2c54"/><stop offset="100%" stop-color="#000"/></linearGradient></defs></svg><div style="font-weight:700">Foso Discord 💬</div><div class="priceTag gem-price" data-cost="3000">3k 👑</div></div>
+      </div>
+
+      <!-- --- SECCION: Sabores Especiales (Consumibles) --- -->
+      <div style="grid-column:1/-1; font-weight:800; margin-top:10px; padding-top:8px; border-top:1px solid rgba(46, 204, 113, 0.3)" data-lang="special_flavors">
+        <svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Sabores Especiales (Consumibles)
+      </div>
+      <div class="shopGrid" id="consumablesShopGrid">
+        <div class="shopCard" data-flavor-id="mint_burst" title="Aumenta la probabilidad de crítico en +5% durante 2 minutos.">
+          <div style="font-size: 32px;">🌿💥</div>
+          <div style="font-weight:700">Ráfaga de Menta</div>
+          <div class="priceTag" data-cost="500000">500K ΣC</div>
+        </div>
+        <div class="shopCard" data-flavor-id="strawberry_boost" title="Aumenta las ganancias de ΣC en +50% durante 5 minutos."><svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #e74c3c;"><path d="M12 2C8.686 2 6 4.686 6 8c0 4 6 12 6 12s6-8 6-12c0-3.314-2.686-6-6-6zm0 8c-1.105 0-2-.895-2-2s.895-2 2-2 2 .895 2 2-.895 2-2 2z"/></svg><div style="font-weight:700">Impulso de Fresa</div><div class="priceTag" data-cost="2000000">2M ΣC</div></div>
+        <div class="shopCard" data-flavor-id="gem_essence" title="Aumenta la probabilidad de encontrar gemas en +1% durante 10 minutos.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #3498db;"><path d="M12 2l-2.5 5.5L4 9l4.5 4.5L7 19l5-3.5 5 3.5-1.5-5.5L20 9l-5.5-1.5z"/></svg>
+          <div style="font-weight:700">Esencia de Gema</div>
+          <div class="priceTag gem-price" data-cost="50">50 💎</div>
+        </div>
+        <div class="shopCard" data-flavor-id="tycoon_elixir" title="Aumenta TODAS las ganancias de ΣC en +100% durante 15 minutos.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #f1c40f;"><path d="M5 16L3 5l5.5 5L12 3l3.5 7L21 5l-2 11H5zm14 3H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2z"/></svg>
+          <div style="font-weight:700">Elixir del Magnate</div>
+          <div class="priceTag gem-price" data-cost="150">150 💎</div>
+        </div>
+        <div class="shopCard" data-flavor-id="battery_chew" title="Reduce el consumo de batería en un 50% durante 10 minutos.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #2ecc71;"><path d="M17 4h-3V2h-4v2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14h-2v-6h2v6z"/></svg>
+          <div style="font-weight:700">Chicle de Batería</div>
+          <div class="priceTag" data-cost="10000000">10M ΣC</div>
+        </div>
+        <div class="shopCard" data-flavor-id="repair_tonic" title="Repara instantáneamente el 25% de la condición de tu foso actual.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #95a5a6;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.4-2.4c.4-.4.4-1 0-1.4z"/></svg>
+          <div style="font-weight:700">Tónico de Reparación</div>
+          <div class="priceTag" data-cost="25000000">25M ΣC</div>
+        </div>
+        <div class="shopCard" data-flavor-id="chest_magnet" title="Aumenta la probabilidad de encontrar cofres en +5% durante 10 minutos.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #e67e22;"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 13H8v-2h4v2zm0-3H8v-2h4v2zm0-3H8V9h4v2zm4 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V9h2v2z"/></svg>
+          <div style="font-weight:700">Imán de Cofres</div>
+          <div class="priceTag gem-price" data-cost="75">75 💎</div>
+        </div>
+        <div class="shopCard" data-flavor-id="time_potion" title="Otorga instantáneamente 1 hora de ganancias AFK.">
+          <svg viewBox="0 0 24 24" style="width:32px; height:32px; fill: #8e44ad;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 14H11v-6h2v4h1.5v2z"/></svg>
+          <div style="font-weight:700">Poción del Tiempo</div>
+          <div class="priceTag gem-price" data-cost="200">200 💎</div>
+        </div>
+      </div>
 
       </div>
     </aside>
@@ -2813,6 +3480,7 @@
             es: {
                 sigmacoin: "Sigmacoin",
                 per_click: "Por clic",
+                exclusive_currency: "Moneda Exclusiva",
                 total_clicks: "Clicks Totales",
                 ranking: "Ranking",
                 streak: "Racha",
@@ -2938,6 +3606,7 @@
             en: {
                 game_title: "Foso Tycoon",
                 sigmacoin: "Sigmacoin",
+                exclusive_currency: "Exclusive Currency",
                 per_click: "Per Click",
                 total_clicks: "Total Clicks",
                 ranking: "Ranking",
@@ -3283,9 +3952,122 @@
             name: 'Foso Yousef 👑',
             cost: Infinity,
             background: 'radial-gradient(ellipse at bottom, #ffd700 0%, #f0a500 100%)',
-            perClick: 1000,
+            perClick: 100000000,
             exclusive: true
-        }];
+        }, {
+            id: 48, name: 'Foso 48: Chronos Key ⏳', cost: 2e24, background: 'radial-gradient(ellipse at bottom, #DAA520 0%, #B8860B 100%)', perClick: 8e7
+        }, {
+            id: 49, name: 'Foso 49: Quantum Foam 🔬', cost: 6e24, background: 'radial-gradient(ellipse at bottom, #48D1CC 0%, #20B2AA 100%)', perClick: 9e7
+        }, {
+            id: 50, name: 'Foso 50: Solar Flare ☀️', cost: 2e25, background: 'radial-gradient(ellipse at bottom, #FF4500 0%, #FFD700 100%)', perClick: 1e8
+        }, {
+            id: 51, name: 'Foso 51: Dark Matter ⬛', cost: 6e25, background: 'radial-gradient(ellipse at bottom, #2F4F4F 0%, #000000 100%)', perClick: 1.2e8
+        }, {
+            id: 52, name: 'Foso 52: Plasma Core ⚡', cost: 2e26, background: 'radial-gradient(ellipse at bottom, #FF00FF 0%, #00FFFF 100%)', perClick: 1.5e8
+        }, {
+            id: 53, name: 'Foso 53: Neutron Star 🌟', cost: 6e26, background: 'radial-gradient(ellipse at bottom, #E6E6FA 0%, #FFFFFF 100%)', perClick: 1.8e8
+        }, {
+            id: 54, name: 'Foso 54: White Hole ⚪', cost: 2e27, background: 'radial-gradient(ellipse at bottom, #FFFFFF 0%, #F0F8FF 100%)', perClick: 2.2e8
+        }, {
+            id: 55, name: 'Foso 55: Wormhole 🌀', cost: 6e27, background: 'radial-gradient(ellipse at bottom, #8A2BE2 0%, #4B0082 100%)', perClick: 2.6e8
+        }, {
+            id: 56, name: 'Foso 56: Multiverse 🌌', cost: 2e28, background: 'radial-gradient(ellipse at bottom, #00008B 0%, #191970 100%)', perClick: 3e8
+        }, {
+            id: 57, name: 'Foso 57: Hyperdrive 🚀', cost: 6e28, background: 'radial-gradient(ellipse at bottom, #C0C0C0 0%, #808080 100%)', perClick: 3.5e8
+        }, {
+            id: 58, name: 'Foso 58: Dyson Sphere ☀️', cost: 2e29, background: 'radial-gradient(ellipse at bottom, #FFD700 0%, #FFA500 100%)', perClick: 4e8
+        }, {
+            id: 59, name: 'Foso 59: Galactic Core 🌌', cost: 6e29, background: 'radial-gradient(ellipse at bottom, #4B0082 0%, #000000 100%)', perClick: 4.5e8
+        }, {
+            id: 60, name: 'Foso 60: The Big Bang 💥', cost: 2e30, background: 'radial-gradient(ellipse at bottom, #FF4500 0%, #FFFF00 100%)', perClick: 5e8
+        }, {
+            id: 61, name: 'Foso 61: Genesis Block 🧱', cost: 6e30, background: 'radial-gradient(ellipse at bottom, #A9A9A9 0%, #696969 100%)', perClick: 6e8
+        }, {
+            id: 62, name: 'Foso 62: Alpha Centauri ⭐', cost: 2e31, background: 'radial-gradient(ellipse at bottom, #FFD700 0%, #FFA500 100%)', perClick: 7e8
+        }, {
+            id: 63, name: 'Foso 63: Andromeda 🌌', cost: 6e31, background: 'radial-gradient(ellipse at bottom, #483D8B 0%, #000000 100%)', perClick: 8e8
+        }, {
+            id: 64, name: 'Foso 64: Orion Nebula 🔭', cost: 2e32, background: 'radial-gradient(ellipse at bottom, #DA70D6 0%, #8A2BE2 100%)', perClick: 9e8
+        }, {
+            id: 65, name: 'Foso 65: Pillars of Creation 🏛️', cost: 6e32, background: 'radial-gradient(ellipse at bottom, #D2B48C 0%, #8B4513 100%)', perClick: 1e9
+        }, {
+            id: 66, name: 'Foso 66: Event Horizon 🌀', cost: 2e33, background: 'radial-gradient(ellipse at bottom, #000000 0%, #4B0082 100%)', perClick: 1.2e9
+        }, {
+            id: 67, name: 'Foso 67: God Particle ✨', cost: 6e33, background: 'radial-gradient(ellipse at bottom, #FFD700 0%, #FFFFFF 100%)', perClick: 1.5e9
+        }, {
+            id: 68, name: 'Foso 68: String Theory 🎻', cost: 2e34, background: 'radial-gradient(ellipse at bottom, #C0C0C0 0%, #808080 100%)', perClick: 1.8e9
+        }, {
+            id: 69, name: 'Foso 69: M-Theory 🧠', cost: 6e34, background: 'radial-gradient(ellipse at bottom, #00008B 0%, #0000CD 100%)', perClick: 2.2e9
+        }, {
+            id: 70, name: 'Foso 70: The Matrix 🟩', cost: 2e35, background: 'radial-gradient(ellipse at bottom, #00FF00 0%, #006400 100%)', perClick: 2.6e9
+        }, {
+            id: 71, name: 'Foso 71: The Architect 📐', cost: 6e35, background: 'radial-gradient(ellipse at bottom, #F5F5F5 0%, #A9A9A9 100%)', perClick: 3e9
+        }, {
+            id: 72, name: 'Foso 72: The Oracle 🔮', cost: 2e36, background: 'radial-gradient(ellipse at bottom, #9400D3 0%, #4B0082 100%)', perClick: 3.5e9
+        }, {
+            id: 73, name: 'Foso 73: The One 🕶️', cost: 6e36, background: 'radial-gradient(ellipse at bottom, #000000 0%, #006400 100%)', perClick: 4e9
+        }, {
+            id: 74, name: 'Foso 74: The Source 💻', cost: 2e37, background: 'radial-gradient(ellipse at bottom, #00BFFF 0%, #1E90FF 100%)', perClick: 4.5e9
+        }, {
+            id: 75, name: 'Foso 75: The Glitch 🐞', cost: 6e37, background: 'radial-gradient(ellipse at bottom, #FF0000 0%, #000000 100%)', perClick: 5e9
+        }, {
+            id: 76, name: 'Foso 76: The Anomaly ❓', cost: 2e38, background: 'radial-gradient(ellipse at bottom, #800080 0%, #FF00FF 100%)', perClick: 6e9
+        }, {
+            id: 77, name: 'Foso 77: The Prophecy 📜', cost: 6e38, background: 'radial-gradient(ellipse at bottom, #F5DEB3 0%, #D2B48C 100%)', perClick: 7e9
+        }, {
+            id: 78, name: 'Foso 78: The Chosen One 👑', cost: 2e39, background: 'radial-gradient(ellipse at bottom, #FFD700 0%, #B8860B 100%)', perClick: 8e9
+        }, {
+            id: 79, name: 'Foso 79: The Resistance ✊', cost: 6e39, background: 'radial-gradient(ellipse at bottom, #B22222 0%, #800000 100%)', perClick: 9e9
+        }, {
+            id: 80, name: 'Foso 80: The Revolution 💥', cost: 2e40, background: 'radial-gradient(ellipse at bottom, #FF4500 0%, #FF0000 100%)', perClick: 1e10
+        }, {
+            id: 81, name: 'Foso 81: The Aftermath 잿', cost: 6e40, background: 'radial-gradient(ellipse at bottom, #808080 0%, #2F4F4F 100%)', perClick: 1.2e10
+        }, {
+            id: 82, name: 'Foso 82: The New Beginning 🌱', cost: 2e41, background: 'radial-gradient(ellipse at bottom, #98FB98 0%, #3CB371 100%)', perClick: 1.5e10
+        }, {
+            id: 83, name: 'Foso 83: The Utopia 🏞️', cost: 6e41, background: 'radial-gradient(ellipse at bottom, #87CEEB 0%, #00BFFF 100%)', perClick: 1.8e10
+        }, {
+            id: 84, name: 'Foso 84: The Dystopia 🏙️', cost: 2e42, background: 'radial-gradient(ellipse at bottom, #708090 0%, #2F4F4F 100%)', perClick: 2.2e10
+        }, {
+            id: 85, name: 'Foso 85: The Simulation 💻', cost: 6e42, background: 'radial-gradient(ellipse at bottom, #00FF7F 0%, #008080 100%)', perClick: 2.6e10
+        }, {
+            id: 86, name: 'Foso 86: The Dream 😴', cost: 2e43, background: 'radial-gradient(ellipse at bottom, #E6E6FA 0%, #D8BFD8 100%)', perClick: 3e10
+        }, {
+            id: 87, name: 'Foso 87: The Nightmare 👹', cost: 6e43, background: 'radial-gradient(ellipse at bottom, #8B0000 0%, #000000 100%)', perClick: 3.5e10
+        }, {
+            id: 88, name: 'Foso 88: The Awakening 🌅', cost: 2e44, background: 'radial-gradient(ellipse at bottom, #FFDAB9 0%, #FFA07A 100%)', perClick: 4e10
+        }, {
+            id: 89, name: 'Foso 89: The Enlightenment 💡', cost: 6e44, background: 'radial-gradient(ellipse at bottom, #FFFFE0 0%, #FFD700 100%)', perClick: 4.5e10
+        }, {
+            id: 90, name: 'Foso 90: The Ascension 🚀', cost: 2e45, background: 'radial-gradient(ellipse at bottom, #ADD8E6 0%, #FFFFFF 100%)', perClick: 5e10
+        }, {
+            id: 91, name: 'Foso 91: The Godhood ✨', cost: 6e45, background: 'radial-gradient(ellipse at bottom, #FFD700 0%, #FFFFFF 100%)', perClick: 6e10
+        }, {
+            id: 92, name: 'Foso 92: The Beyond 🌌', cost: 2e46, background: 'radial-gradient(ellipse at bottom, #000000 0%, #4B0082 100%)', perClick: 7e10
+        }, {
+            id: 93, name: 'Foso 93: The Omega Point 🎯', cost: 6e46, background: 'radial-gradient(ellipse at bottom, #FF4500 0%, #DC143C 100%)', perClick: 8e10
+        }, {
+            id: 94, name: 'Foso 94: The Final Foso 🏁', cost: 2e47, background: 'radial-gradient(ellipse at bottom, #C0C0C0 0%, #FFFFFF 100%)', perClick: 9e10
+        }, {
+            id: 95, name: 'Foso 95: The Post-Game 🎮', cost: 6e47, background: 'radial-gradient(ellipse at bottom, #0000CD 0%, #000080 100%)', perClick: 1e11
+        }, {
+            id: 96, name: 'Foso 96: The Credits 📜', cost: 2e48, background: 'radial-gradient(ellipse at bottom, #2F4F4F 0%, #000000 100%)', perClick: 1.2e11
+        }, {
+            id: 97, name: 'Foso Dyland 👾', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #8e44ad 0%, #341f97 100%)', perClick: 1.5e11, exclusive: true
+        }, {
+            id: 98, name: 'Foso Aziz 👓', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #c0392b 0%, #e74c3c 100%)', perClick: 1.5e11, exclusive: true
+        }, {
+            id: 99, name: 'Foso Ali ❄️', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #ecf0f1 0%, #bdc3c7 100%)', perClick: 1.5e11, exclusive: true
+        }, {
+            id: 101, name: 'Foso Esteva ⚡', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #f1c40f 0%, #f39c12 100%)', perClick: 1.5e11, exclusive: true
+        }, {
+            id: 102, name: 'Foso Calfa 💸', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #27ae60 0%, #2ecc71 100%)', perClick: 1.5e11, exclusive: true
+        }, {
+            id: 103, name: 'Foso Discord 💬', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #5865F2 0%, #4e5bf0 100%)', perClick: 1.5e11, exclusive: true
+        }
+    ];
+    // CORREGIDO: El foso 100 se movió aquí para evitar conflicto de ID
+    FOSOS.push({ id: 100, name: 'Foso David Calls 📱', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #3498db 0%, #2980b9 100%)', perClick: 1.5e11, exclusive: true });
 
         const GEM_FOSOS = Array.from({ length: 30 }, (_, i) => ({
             id: i + 1,
@@ -3387,10 +4169,10 @@
         ];
 
         const PASSIVE_RECHARGE_UPGRADES = [
-            { cost: 10000, amount: 0.5 }, // 0.5 por segundo
-            { cost: 50000, amount: 1 },
-            { cost: 250000, amount: 2 },
-            { cost: 1000000, amount: 5 },
+            { cost: 10000, amount: 0.1 }, // 0.1 por segundo (muy lento)
+            { cost: 50000, amount: 0.2 },
+            { cost: 250000, amount: 0.4 },
+            { cost: 1000000, amount: 0.8 },
         ];
 
         const COMBO_UPGRADES = [
@@ -3404,14 +4186,6 @@
             { cost: 100000, chance: 0.01 }, // +1%
             { cost: 500000, chance: 0.02 },
             { cost: 2500000, chance: 0.03 },
-        ];
-
-        const AUTORECHARGE_UPGRADES = [
-            { cost: 75000, recharge: 0.1 },
-            { cost: 300000, recharge: 0.2 },
-            { cost: 1500000, recharge: 0.3 },
-            { cost: 7000000, recharge: 0.4 },
-            { cost: 30000000, recharge: 0.5 },
         ];
 
         const AFK_UPGRADES = [
@@ -3542,12 +4316,12 @@
             { label: "x3 Clics (30s)", reward: (s) => {
                 s.perClickMult *= 3;
                 showToast("x3 Clics por 30 segundos!", "success");
-                setTimeout(() => {
+                setTimeout(() => { // CORREGIDO: Usar s.perClickMult
                     s.perClickMult /= 3;
                     showToast("x3 Clics ha terminado.", "info");
                 }, 30000);
             }},
-            { label: "Foso Yousef 👑", reward: (s) => {
+            { label: "Foso Yousef 👑", reward: (s) => { // CORREGIDO: El índice era incorrecto
                 const fosoIndex = 46; // El índice del Foso Yousef
                 if (s.fososOwned.includes(fosoIndex)) {
                     const consolationPrize = 500000;
@@ -3599,6 +4373,7 @@
             fososOwned: [0],
             gemFososOwned: [],
             fosoConditions: {},
+            exclusiveMoney: 0,
             achievements: {},
             gems: 0,
             unlockedPets: [],
@@ -3648,7 +4423,6 @@
                 efficiency: 0,
                 combo: 0,
                 liquid_luck: 0,
-                autorecharge: 0,
                 passive_recharge: 0
             },
             combo: {
@@ -3680,6 +4454,7 @@
         const sigTotalEl = document.getElementById('sigTotal');
         const perClickEl = document.getElementById('perClick');
         const totalClicksEl = document.getElementById('totalClicks');
+        const exclusiveMoneyTotalEl = document.getElementById('exclusiveMoneyTotal');
         const shopSigma = document.getElementById('shopSigma');
         const rankTitleEl = document.getElementById('rankTitle');
         const shopGems = document.getElementById('shopGems');
@@ -4080,6 +4855,12 @@
                 state.chests.splice(index, 1);
                 state.chestsOpened = (state.chestsOpened || 0) + 1;
 
+                // Recompensa de Moneda Exclusiva cada 50 cofres
+                if (state.chestsOpened > 0 && state.chestsOpened % 50 === 0) {
+                    state.exclusiveMoney = (state.exclusiveMoney || 0) + 100;
+                    showToast(`¡Has abierto 50 cofres! +100 Monedas Exclusivas 👑`, 'success', 5000);
+                }
+
                 playSound('chestOpenSfx');
                 
                 const rand = Math.random();
@@ -4214,6 +4995,7 @@
         function render() {
             const lang = state.lang || 'es';
             sigTotalEl.textContent = formatNum(state.sig);
+            if(exclusiveMoneyTotalEl) exclusiveMoneyTotalEl.textContent = formatNum(state.exclusiveMoney);
             if(shopSigma) shopSigma.textContent = formatNum(state.sig);
 
             const fosoPolloCard = document.querySelector('.shopCard[data-index="45"]');
@@ -4359,7 +5141,6 @@
                     priceTag.style.background = '';
                 }
             });
-            renderUpgrades();
         }
 
         function renderUpgrades() {
@@ -4367,15 +5148,14 @@
             if (!upgradesGrid) return;
             upgradesGrid.innerHTML = '';
 
-            const allUpgrades = {
+            const allUpgrades = { // CORREGIDO: Añadidos los tipos de mejora que faltaban
                 autoclicker: { name_key: 'upgrade_autoclicker', upgrades: AUTOCLICKER_UPGRADES, icon: '👆', desc: 'Añade clics automáticos por segundo.' },
                 battery: { name_key: 'upgrade_battery', upgrades: BATTERY_UPGRADES, icon: '🔋', desc: 'Aumenta la capacidad máxima de la batería.' },
                 efficiency: { name_key: 'upgrade_efficiency', upgrades: EFFICIENCY_UPGRADES, icon: '💧', desc: 'Reduce el consumo de batería por clic.' },
                 critical: { name_key: 'upgrade_critical', upgrades: CRITICAL_UPGRADES, icon: '💥', desc: 'Aumenta la probabilidad y multiplicador de críticos.' },
                 combo: { name_key: 'upgrade_combo', upgrades: COMBO_UPGRADES, icon: '⚡', desc: 'Aumenta el tiempo para mantener el combo.' },
-                autorecharge: { name_key: 'upgrade_autorecharge', upgrades: AUTORECHARGE_UPGRADES, icon: '🔄', desc: 'Recarga una pequeña cantidad de batería con cada clic.' },
                 liquid_luck: { name_key: 'upgrade_liquid_luck', upgrades: LIQUID_LUCK_UPGRADES, icon: '🧪', desc: 'Aumenta la probabilidad de encontrar líquidos.' },
-                passive_recharge: { name_key: 'upgrade_passive_recharge', upgrades: PASSIVE_RECHARGE_UPGRADES, icon: '⏳', desc: 'Recarga la batería pasivamente con el tiempo.' },
+                passive_recharge: { name_key: 'upgrade_passive_recharge', upgrades: PASSIVE_RECHARGE_UPGRADES, icon: '⏳', desc: 'Recarga la batería pasivamente con el tiempo.' }
             };
 
             for (const type in allUpgrades) {
@@ -4603,14 +5383,8 @@
                     finalDrain *= (1 - state.activeCraftedFlavor.bonus.value); // 50% less drain means multiply by 0.5
                 }
                 state.battery = Math.max(0, state.battery - finalDrain);
-            }
-            
-            // Auto-recharge per click
-            const rechargeLevel = state.upgradeLevels.autorecharge || 0;
-            if (rechargeLevel > 0) {
-                const rechargeAmount = AUTORECHARGE_UPGRADES[rechargeLevel - 1].recharge; // CORREGIDO: Se añade la lógica de recarga
-                state.battery = Math.min(state.maxBattery, (state.battery || 0) + rechargeAmount);
-            }
+             }
+
 
             // The click handler can be called by the autoclicker with a null event
             // We only want to show animations for manual clicks (where 'e' is a valid event object)
@@ -4878,11 +5652,11 @@
         function updatePassiveRechargeLoop() {
             if (passiveRechargeTimer) {
                 clearInterval(passiveRechargeTimer);
-                passiveRechargeTimer = null; // El error estaba en la siguiente línea
+                passiveRechargeTimer = null;
             }
             const level = (state.upgradeLevels && state.upgradeLevels.passive_recharge) || 0;
             if (level > 0) {
-                const rechargeAmount = PASSIVE_RECHARGE_UPGRADES[level - 1].amount; // La lógica aquí es correcta
+                const rechargeAmount = PASSIVE_RECHARGE_UPGRADES[level - 1].amount;
                 passiveRechargeTimer = setInterval(() => {
                     if (state.powerOn && !isCharging && state.battery < state.maxBattery) {
                         state.battery = Math.min(state.maxBattery, state.battery + rechargeAmount);
@@ -5720,12 +6494,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            updatePassiveRechargeLoop();
             loadState();
             checkMissionReset(); // Must be before render
             renderWheel(); // Initial check
             updatePassiveRechargeLoop();
             translateUI();
             updateAutoClickLoop(); // CORREGIDO: Llamada a la función
+            updatePassiveRechargeLoop(); // CORREGIDO: Asegura que la recarga pasiva se inicie al cargar partida
+
             render();
 
             setInterval(saveState, CONFIG.autosaveMs);
@@ -5810,41 +6587,41 @@
                     const code = promoInput.value.trim().toUpperCase();
                     if (!code) return;
 
-                    if (code === 'IG') {
-                        state.perClickMult *= 2;
-                        showToast('¡Código IG! x2 de ganancias por 10 minutos.', 'success');
-                        setTimeout(() => {
-                            state.perClickMult /= 2;
-                            showToast('El bonus del código IG ha terminado.', 'info');
-                        }, 10 * 60 * 1000); // 10 minutos
-                        promoInput.value = '';
-                    } else if  (code === 'ALRRR') {
-                        state.sig = Infinity;
-                        state.gems = Infinity;
-                        showToast('¡Código ALR! ¡Dinero y gemas infinitas!', 'success');
-                        promoInput.value = '';
-                    } 
-                    else if (code === 'SIGMA') {
+                    const exclusiveFosoCodes = {
+                        "F_DYLAND": 97, "F_AZIZ": 98, "F_ALI": 99, "F_DAVID": 100,
+                        "F_ESTEVA": 101, "F_CALFA": 102
+                    };
+
+                    if (code === 'DISCORD') {
+                        state.sig += 200000;
+                        state.gems += 100;
+                        state.exclusiveMoney += 200;
+                        if (!state.fososOwned.includes(103)) state.fososOwned.push(103);
+                        showToast('¡Recompensas del código DISCORD recibidas!', 'success');
+                    } else if (exclusiveFosoCodes[code]) { // CORREGIDO: Usar el índice del foso en lugar del ID.
+                        const fosoId = exclusiveFosoCodes[code];
+                        const fosoIndex = FOSOS.findIndex(f => f.id === fosoId);
+                        if (fosoIndex !== -1 && !state.fososOwned.includes(fosoIndex)) {
+                            state.fososOwned.push(fosoIndex);
+                            showToast(`¡Has desbloqueado el ${FOSOS[fosoIndex].name}!`, 'success');
+                            render(); // CORREGIDO: Actualiza la tienda para mostrar el foso como "Adquirido"
+                        } else {
+                            showToast('Ya tienes este foso.', 'warning');
+                        }
+                    } else if (code === 'SG') {
+                        state.exclusiveMoney = (state.exclusiveMoney || 0) + 3000;
+                        showToast('¡Código SG! +3,000 Monedas Exclusivas 👑.', 'success');
+                    } else if (code === 'SIGMA') {
                         state.sig += 1000;
                         state.totalSigEarned += 1000;
                         showToast('¡Código SIGMA! +1,000 ΣC.', 'success');
-                        promoInput.value = '';
-                    } else if (code === 'FOSO') {
-                        if (!state.fososOwned.includes(1)) {
-                            state.fososOwned.push(1);
-                            showToast('¡Código FOSO! Has desbloqueado el Foso 2.', 'success');
-                        } else {
-                            showToast('Ya tienes el Foso 2 desbloqueado.', 'warning');
-                        }
-                        promoInput.value = '';
                     } else if (code === 'GEMAS') {
                         state.gems += 50;
                         showToast('¡Código GEMAS! +50 gemas.', 'success');
-                        promoInput.value = '';
-
                     }else {
                         showToast('Código promocional no válido.', 'error');
                     }
+                    promoInput.value = '';
                 });
             }
 
@@ -5877,7 +6654,7 @@
             if(btnUpgrades) btnUpgrades.addEventListener('click', () => {
            
                 renderUpgrades();
-                                upgradesModal.classList.remove('hidden')
+                upgradesModal.classList.remove('hidden');
             });
             if(upgradesModal) {
                 upgradesModal.querySelector('.close-btn').addEventListener('click', () => {
@@ -6127,7 +6904,7 @@
                                 state.activeFosoIndex = index;
                                 showToast(`Foso ${item.name} comprado y equipado!`, 'success');
                                 playSound('buySfx');
-                                updateMissionProgress('buy_foso', 1);                                
+                                updateMissionProgress('buy_foso', 1);
                                 checkAchievements();
                             } else {
                                 showToast('No tienes suficientes Sigmacoins.', 'error');
@@ -6138,6 +6915,17 @@
                         const item = GEM_FOSOS[index];
                         if (!state.gemFososOwned.includes(index)) {
                             if (state.gems >= item.cost) {
+                                if (item.exclusiveCurrency && state[item.exclusiveCurrency] >= item.exclusiveCost) {
+                                    state[item.exclusiveCurrency] -= item.exclusiveCost;
+                                    state.fososOwned.push(index);
+                                    state.activeFosoIndex = index;
+                                    showToast(`Foso ${item.name} comprado y equipado!`, 'success');
+                                    playSound('buySfx');
+                                } else if (item.exclusiveCurrency) {
+                                    showToast(`No tienes suficiente Moneda Exclusiva.`, 'error');
+                                }
+                            } else if (state.sig >= currentCost) {
+                                // ... (código existente para compra con Sigmacoins)
                                 state.gems -= item.cost;
                                 state.gemFososOwned.push(index);
                                 showToast(`¡Foso de Gema comprado! Bonus de ganancias +5%`, 'success');
@@ -6158,8 +6946,16 @@
                     const button = e.target.closest('button[data-upgrade]');
                     if (!button) return;
 
-                    const upgradeType = button.dataset.upgrade;
-                    const allUpgrades = { autoclicker: AUTOCLICKER_UPGRADES, battery: BATTERY_UPGRADES, critical: CRITICAL_UPGRADES, efficiency: EFFICIENCY_UPGRADES, combo: COMBO_UPGRADES, liquid_luck: LIQUID_LUCK_UPGRADES };
+                    const upgradeType = button.dataset.upgrade; // CORREGIDO: Se usa la lista completa de mejoras
+                    const allUpgrades = {
+                        autoclicker: AUTOCLICKER_UPGRADES,
+                        battery: BATTERY_UPGRADES,
+                        critical: CRITICAL_UPGRADES,
+                        efficiency: EFFICIENCY_UPGRADES,
+                        combo: COMBO_UPGRADES,
+                        liquid_luck: LIQUID_LUCK_UPGRADES,
+                        passive_recharge: PASSIVE_RECHARGE_UPGRADES
+                    };
                     const upgrades = allUpgrades[upgradeType];
                     const level = state.upgradeLevels[upgradeType] || 0;
 
@@ -6169,9 +6965,9 @@
                         if (state.sig >= cost) {
                             state.sig -= cost;
                             state.upgradeLevels[upgradeType]++;
-                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity;
+                            if (upgradeType === 'battery') state.maxBattery = upgrades[level].capacity;
                     if (upgradeType === 'autoclicker') updateAutoClickLoop(); // CORREGIDO: Llamada a la función
-                            if (upgradeType === 'autorecharge') updateAutoRechargeLoop();
+                        
                             playSound('buySfx');
                             showToast(`¡Mejora de ${upgradeType} comprada!`, 'success');
                             renderUpgrades();
@@ -6224,800 +7020,6 @@
     })();
 </script>
 
-<!-- Elementos de Audio -->
-<audio id="bgMusic" loop src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAAAAACQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEA//tA0BMAAAAAAABEluZm8AAAAPAAAABAAAASAAAAAAAAAAAAAAAAAAAAAAQU1BVE9SQUxTVE9SRQAA//tA1BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA2BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA3BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA4BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA5BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA6BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA7BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA8BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA9BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA+BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA/BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-"></audio>
-<audio id="clickSfx" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAABkYXRhAAAAAA=="></audio>
-<audio id="buySfx" src="data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAIARKwAABCxAgAEABgAZGF0YUYAAAD/////////////////v/7//v/+/////v/9//7/+//6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/+v/6//r/-"></audio>
-                    tutorialOverlay.classList.add('hidden');
-                    state.tutorialCompleted = true;
-                    return;
-            }
-
-            if (!targetEl) { // If element doesn't exist, skip step
-                checkTutorialProgress(step + 1);
-                return;
-            }
-
-            tutorialText.innerText = text;
-            tutorialNextBtn.textContent = nextBtnText;
-
-            const rect = targetEl.getBoundingClientRect();
-            tutorialHighlight.style.left = `${rect.left - 5}px`;
-            tutorialHighlight.style.top = `${rect.top - 5}px`;
-            tutorialHighlight.style.width = `${rect.width + 10}px`;
-            tutorialHighlight.style.height = `${rect.height + 10}px`;
-            tutorialHighlights.push(targetEl);
-
-            // Position tooltip
-            if (rect.bottom + 150 > window.innerHeight) { // If not enough space below
-                tutorialTooltip.style.top = `${rect.top - tutorialTooltip.offsetHeight - 10}px`;
-            } else {
-                tutorialTooltip.style.top = `${rect.bottom + 10}px`;
-            }
-            tutorialTooltip.style.left = `${rect.left + rect.width / 2 - tutorialTooltip.offsetWidth / 2}px`;
-
-            tutorialNextBtn.onclick = () => {
-                if (condition()) {
-                    showTutorialStep(step + 1);
-                }
-            };
-        }
-
-        function checkTutorialProgress(nextStep) {
-            if (state.tutorialCompleted || state.tutorialStep >= nextStep) return;
-            showTutorialStep(nextStep);
-        }
-
-        function startTutorial() {
-            if (state.tutorialCompleted || state.tutorialStep > 0) return;
-            setTimeout(() => showTutorialStep(1), 2000);
-        }
-
-        function openMaintenanceModal() {
-            maintenanceModal.classList.remove('hidden');
-            generateMaintenanceGame();
-        }
-
-        function generateMaintenanceGame() {
-            const gameArea = maintenanceGameArea;
-            gameArea.innerHTML = '';
-            maintenanceSequence = [];
-            currentMaintenanceStep = 0;
-
-            const fosoHealth = state.fosoConditions[state.activeFosoIndex] || 100;
-            if (fosoHealth === 100) {
-                maintenanceInstructions.textContent = "El foso está en perfectas condiciones.";
-                maintenanceRewardText.textContent = "";
-                setTimeout(() => maintenanceModal.classList.add('hidden'), 1500);
-                return;
-            }
-            
-            maintenanceInstructions.textContent = LANGUAGES[state.lang || 'es']['maintenance_instructions'];
-            const reward = Math.floor((100 - fosoHealth) * 10 * (state.maintenanceRewardBonus || 1));
-            maintenanceRewardText.textContent = LANGUAGES[state.lang || 'es']['maintenance_reward'].replace('{amount}', formatNum(reward));
-            
-            const numPoints = 4;
-            for (let i = 1; i <= numPoints; i++) {
-                const point = document.createElement('div');
-                point.className = 'maintenance-point';
-                point.textContent = i;
-                point.dataset.id = i;
-
-                // Posiciones aleatorias pero dentro del foso
-                point.style.top = `${Math.random() * 70 + 10}%`; // Entre 10% y 80%
-                point.style.left = `${Math.random() * 60 + 20}%`; // Entre 20% y 80%
-
-                point.addEventListener('click', handleMaintenanceClick);
-                gameArea.appendChild(point);
-            }
-        }
-
-        function handleMaintenanceClick(e) {
-            const clickedId = parseInt(e.target.dataset.id, 10);
-            if (clickedId === currentMaintenanceStep + 1) {
-                currentMaintenanceStep++;
-                e.target.style.background = 'lightgreen';
-                e.target.style.pointerEvents = 'none'; // Desactivar tras acierto
-
-                if (currentMaintenanceStep === 4) { // 4 es el número de puntos
-                    // Éxito
-                    const fosoHealth = state.fosoConditions[state.activeFosoIndex] || 100;
-                    const reward = Math.floor((100 - fosoHealth) * 10 * (state.maintenanceRewardBonus || 1));
-                    state.sig += reward;
-                    state.totalSigEarned += reward;
-                    state.fosoConditions[state.activeFosoIndex] = 100;
-                    state.maintenancesDone = (state.maintenancesDone || 0) + 1;
-                    showToast(LANGUAGES[state.lang || 'es'].foso_repaired_toast.replace('{amount}', formatNum(reward)), "success");
-                    maintenanceModal.classList.add('hidden');
-                }
-            } else {
-                // Error
-                showToast("¡Secuencia incorrecta! Inténtalo de nuevo.", "error");
-                generateMaintenanceGame(); // Reiniciar
-            }
-        }
-
-        function renderPets() {
-            const petsGrid = document.getElementById('petsGrid');
-            const petsGems = document.getElementById('petsGems');
-            if (!petsGrid || !petsGems) return;
-
-            petsGems.textContent = formatNum(state.gems);
-            petsGrid.innerHTML = '';
-
-            Object.values(PETS).forEach(pet => {
-                const isUnlocked = state.unlockedPets.includes(pet.id);
-                const isEquipped = state.equippedPet === pet.id;
-
-                const card = document.createElement('div');
-                card.className = 'shopCard';
-                card.dataset.petId = pet.id;
-
-                if (isEquipped) {
-                    card.style.borderColor = 'var(--accent)';
-                    card.style.boxShadow = '0 0 15px -3px var(--accent)';
-                }
-
-                card.innerHTML = `
-                    <div style="font-size: 48px;">${pet.icon}</div>
-                    <div style="font-weight:700;">${pet.name}</div>
-                    <p class="hint" style="font-size:11px; margin: 4px 0; min-height: 2.5em;">${pet.description}</p>
-                    <button class="mata-btn pet-action-btn" style="width: 100%; justify-content: center;"></button>
-                `;
-
-                const actionBtn = card.querySelector('.pet-action-btn');
-                if (isEquipped) {
-                    actionBtn.textContent = 'Equipado';
-                    actionBtn.disabled = true;
-                    actionBtn.style.background = '#27ae60';
-                } else if (isUnlocked) {
-                    actionBtn.textContent = 'Equipar';
-                    actionBtn.dataset.action = 'equip';
-                } else {
-                    actionBtn.textContent = `Comprar (${formatNum(pet.cost)} 💎)`;
-                    actionBtn.dataset.action = 'buy';
-                    actionBtn.disabled = state.gems < pet.cost;
-                }
-
-                petsGrid.appendChild(card);
-            });
-        }
-
-        function openPetsModal() {
-            renderPets();
-            petsModal.classList.remove('hidden');
-            dotPets.classList.add('hidden');
-        }
-
-        function triggerRandomEvent() {
-            if (state.activeEvent) return; // Don't start a new event if one is active
-
-            if (Math.random() < CONFIG.eventChance) {
-                const eventConfig = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
-                state.eventsParticipated = (state.eventsParticipated || 0) + 1;
-                state.activeEvent = {
-                    id: eventConfig.id,
-                    name_key: eventConfig.name_key,
-                    expires: Date.now() + eventConfig.duration,
-                };
-
-                // Apply event effect
-                if (eventConfig.onStart) {
-                    eventConfig.onStart(state);
-                }
-
-                showToast(LANGUAGES[state.lang || 'es'][eventConfig.name_key], 'success', 5000);
-                eventBanner.classList.remove('hidden');
-            }
-        }
-
-        function updateEventUI() {
-            if (!state.activeEvent) {
-                eventBanner.classList.add('hidden');
-                return;
-            }
-
-            const remaining = state.activeEvent.expires - Date.now();
-            if (remaining <= 0) {
-                // Event ended
-                const eventConfig = RANDOM_EVENTS.find(e => e.id === state.activeEvent.id);
-                if (eventConfig && eventConfig.onEnd) {
-                    eventConfig.onEnd();
-                }
-                showToast("El evento ha terminado.", "info");
-                state.activeEvent = null;
-                eventBanner.classList.add('hidden');
-            } else {
-                eventName.textContent = LANGUAGES[state.lang || 'es'][state.activeEvent.name_key];
-                eventTimer.textContent = `${Math.ceil(remaining / 1000)}s`;
-            }
-        }
-
-        function openBlackMarket() {
-            state.blackMarketOffers = [];
-            // Generate 3 unique offers
-            const availableFosos = FOSOS.map((f, i) => i).filter(i => i > 0 && !state.fososOwned.includes(i));
-            
-            for (let i = 0; i < 3 && availableFosos.length > 0; i++) {
-                const randIndex = Math.floor(Math.random() * availableFosos.length);
-                const fosoIndex = availableFosos.splice(randIndex, 1)[0];
-                const discount = 0.3 + Math.random() * 0.4; // 30% - 70% discount
-                const foso = FOSOS[fosoIndex];
-                state.blackMarketOffers.push({
-                    fosoIndex: fosoIndex,
-                    cost: Math.round(foso.cost * (1 - discount)),
-                });
-            }
-            renderBlackMarket();
-            blackMarketModal.classList.remove('hidden');
-        }
-
-        function renderBlackMarket() {
-            blackMarketGrid.innerHTML = '';
-            state.blackMarketOffers.forEach((offer, i) => {
-                if (offer.bought) return;
-                const foso = FOSOS[offer.fosoIndex];
-                const card = document.createElement('div');
-                card.className = 'shopCard';
-                card.dataset.offerIndex = i;
-                card.innerHTML = `
-                    <div class="metaTiny" style="font-weight:700">${document.querySelector(`.shopCard[data-index="${offer.fosoIndex}"] .metaTiny`).textContent}</div>
-                    <div class="priceTag" style="color: #2ecc71;">${formatNum(offer.cost)} ΣC</div>
-                `;
-                card.addEventListener('click', () => buyBlackMarketOffer(i));
-                blackMarketGrid.appendChild(card);
-            });
-        }
-
-        function buyBlackMarketOffer(offerIndex) {
-            const offer = state.blackMarketOffers[offerIndex];
-            if (!offer || offer.bought) return;
-
-            if (state.sig >= offer.cost) {
-                state.sig -= offer.cost;
-                state.fososOwned.push(offer.fosoIndex);
-                offer.bought = true; // Mark as bought
-                showToast("¡Buena compra!", "success");
-                renderBlackMarket(); // Re-render to show it's gone
-            } else {
-                showToast("No tienes suficientes Sigmacoins.", "error");
-            }
-        }
-
-        function updateMarket() {
-            FOSOS.forEach((foso, index) => {
-                if (foso.cost > 0) {
-                    const change = (Math.random() * 0.20) + 0.05; // 5% to 25%
-                    const direction = Math.random() > 0.5 ? 1 : -1;
-                    state.market.priceMultipliers[index] = Math.max(0.5, 1 + (change * direction)); // Min price is 50% of base
-                } else {
-                    state.market.priceMultipliers[index] = 1;
-                }
-            });
-            state.market.nextUpdate = Date.now() + CONFIG.marketUpdateInterval;
-            showToast("¡Los precios del mercado han cambiado!", "info");
-            render();
-        }
-
-        function updateMarketStatus() {
-            const remaining = state.market.nextUpdate - Date.now();
-            if (remaining <= 0) return;
-            const minutes = Math.floor(remaining / 60000);
-            const seconds = Math.floor((remaining % 60000) / 1000);
-            marketStatusEl.textContent = `Próximo cambio de precios en: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadState();
-            checkMissionReset(); // Must be before render
-            renderWheel();
-            calculateAfkEarnings();
-            checkWheelCooldown(); // Initial check
-            translateUI();
-            updateAutoClickLoop();
-            render();
-            startTutorial();
-
-            setInterval(saveState, CONFIG.autosaveMs);
-
-            renderWheel();
-            calculateAfkEarnings();
-            checkWheelCooldown(); // Initial check
-            // // Intervalo para la mecánica de quemado (DESACTIVADO)
-            // setInterval(() => {
-            //     if ((state.clicksThisSecond || 0) > CONFIG.overheatCps) {
-            //         state.burned = true;
-            //         showToast('¡Has quemado el foso! Equipa otro o espera a que se enfríe.', 'error');
-            //         render();
-            //     }
-            //     state.clicksThisSecond = 0;
-            // }, 1000);
-
-            setInterval(() => { render(); updateMarketStatus(); updateEventUI(); renderActiveFlavor(); }, CONFIG.uiTickMs);
-            setInterval(calculateAfkEarnings, 60000);
-            setInterval(checkWheelCooldown, 1000);
-            checkDailyReward();
-
-            // Lluvia de monedas periódica
-            setInterval(() => {
-                const rainContainer = document.createElement('div');
-                rainContainer.className = 'coin-rain';
-                document.body.appendChild(rainContainer);
-
-                for (let i = 0; i < 50; i++) {
-                    const coin = document.createElement('div');
-                    coin.className = 'coin';
-                    coin.textContent = 'Σ';
-                    coin.style.left = `${Math.random() * 100}vw`;
-                    coin.style.animationDelay = `${Math.random() * 4}s`;
-                    coin.style.fontSize = `${Math.random() * 16 + 12}px`;
-                    coin.style.opacity = `${Math.random() * 0.5 + 0.5}`;
-                    rainContainer.appendChild(coin);
-                }
-
-                showToast("¡Lluvia de Sigmacoins!", "success", 4000);
-
-                setTimeout(() => {
-                    rainContainer.remove();
-                }, 5000); // Duración de la animación + delay
-            }, 20 * 60 * 1000); // 20 minutos
-
-            eventInterval = setInterval(triggerRandomEvent, CONFIG.eventInterval);
-            if (Date.now() > state.market.nextUpdate) {
-                updateMarket();
-            }
-            marketUpdateInterval = setInterval(updateMarket, CONFIG.marketUpdateInterval);
-
-            if (menuToggle) {
-                menuToggle.addEventListener('click', () => {
-                    rightMenu.classList.toggle('active');
-                    handleTutorialAction(4);
-            }
-            dotChests.classList.toggle('hidden', state.chests.length === 0);
-
-            if(langSelect) langSelect.value = state.lang || 'es';
-
-            if(centralFoso) centralFoso.addEventListener('click', handleCentralClick);
-
-            if(btnMaintenance) btnMaintenance.addEventListener('click', openMaintenanceModal);
-            if(maintenanceModal) {
-                maintenanceModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(maintenanceModal);
-                });
-            }
-
-            if(blackMarketModal) {
-                blackMarketModal.querySelector('.close-btn').addEventListener('click', () => { 
-                    closeAndAnimate(blackMarketModal);
-                });
-            }
-
-            const promoBtn = document.getElementById('promoBtn');
-            if (promoBtn) {
-                promoBtn.addEventListener('click', () => {
-                    const code = promoInput.value.trim().toUpperCase();
-                    if (!code) return;
-
-                    if (code === 'IG') {
-                        state.perClickMult *= 2;
-                        showToast('¡Código IG! x2 de ganancias por 10 minutos.', 'success');
-                        setTimeout(() => {
-                            state.perClickMult /= 2;
-                            showToast('El bonus del código IG ha terminado.', 'info');
-                        }, 10 * 60 * 1000); // 10 minutos
-                        promoInput.value = '';
-                    } else if  (code === 'ALR') {
-                        state.sig = Infinity;
-                        state.gems = Infinity;
-                        showToast('¡Código ALR! ¡Dinero y gemas infinitas!', 'success');
-                        promoInput.value = '';
-                    } 
-                    else if (code === 'SIGMA') {
-                        state.sig += 1000;
-                        state.totalSigEarned += 1000;
-                        showToast('¡Código SIGMA! +1,000 ΣC.', 'success');
-                        promoInput.value = '';
-                    } else if (code === 'FOSO') {
-                        if (!state.fososOwned.includes(1)) {
-                            state.fososOwned.push(1);
-                            showToast('¡Código FOSO! Has desbloqueado el Foso 2.', 'success');
-                        } else {
-                            showToast('Ya tienes el Foso 2 desbloqueado.', 'warning');
-                        }
-                        promoInput.value = '';
-                    } else if (code === 'GEMAS') {
-                        state.gems += 50;
-                        showToast('¡Código GEMAS! +50 gemas.', 'success');
-                        promoInput.value = '';
-
-                    }else {
-                        showToast('Código promocional no válido.', 'error');
-                    }
-                });
-            }
-
-
-            if(btnPower) {
-                btnPower.addEventListener('click', () => {
-                    state.powerOn = !state.powerOn;
-                    const powerStatus = state.powerOn ? 'encendido' : 'apagado';
-                    const color = state.powerOn ? 'success' : 'error';
-                    btnPower.style.background = state.powerOn ? '#0ea5b7' : '#555';
-                    showToast(`Foso ${powerStatus}.`, color);
-                    render();
-                });
-            }
-
-            if(btnChargeToggle) btnChargeToggle.addEventListener('click', () => {
-                toggleCharging();
-                // handleTutorialAction(3); // Tutorial step for charging
-            });
-
-            if(shopModal) {
-              shopModal.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => closeAndAnimate(shopModal));
-              });
-            }
-
-            if(btnUpgrades) btnUpgrades.addEventListener('click', () => { // CORREGIDO
-                upgradesModal.classList.remove('hidden');
-                renderUpgrades();
-            }); 
-            if(upgradesModal) {
-                upgradesModal.querySelector('.close-btn').addEventListener('click', () => upgradesModal.classList.add('hidden'));
-            }
-
-            if(btnRebirth) btnRebirth.addEventListener('click', openRebirthModal); 
-            if(rebirthModal) {
-                rebirthModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(rebirthModal));
-                document.getElementById('btnConfirmRebirth').addEventListener('click', handleRebirth);
-            }
-
-            const btnExchangeFromShop = document.getElementById('btnExchangeFromShop');
-            if(btnExchangeFromShop) btnExchangeFromShop.addEventListener('click', openExchangeModal);
-
-            if(exchangeModal) {
-                const openExchangeModal = () => {
-                    // No hay botón 'btnExchange' global, solo el de la tienda
-                    // if(btnExchange) btnExchange.addEventListener('click', openExchangeModal);
-                    exchangeModal.classList.remove('hidden');
-                };
-                // CORRECCIÓN: Mover la definición de openExchangeModal fuera del if
-                // y asociar el evento aquí.
-                exchangeModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(exchangeModal));
-                exchangeInput.addEventListener('input', () => {
-                    const amount = parseInt(exchangeInput.value, 10) || 0;
-                    const cost = amount * 30;
-                    exchangeCost.textContent = `Costo: ${formatNum(cost)} ΣC`;
-                });
-                exchangeBtn.addEventListener('click', () => {
-                    const amount = parseInt(exchangeInput.value, 10);
-                    if (!amount || amount <= 0) {
-                        showToast('Introduce una cantidad válida.', 'error');
-                        return;
-                    }
-                    const cost = amount * 30;
-                    if (state.sig >= cost) {
-                        state.sig -= cost;
-                        state.gems += amount;
-                        showToast(`¡Has intercambiado ${formatNum(cost)} ΣC por ${formatNum(amount)} gemas!`, 'success');
-                        exchangeInput.value = '';
-                        exchangeCost.textContent = 'Costo: 0 ΣC';
-                        closeAndAnimate(exchangeModal);
-                        render();
-                    } else {
-                        showToast('No tienes suficientes Sigmacoins para este intercambio.', 'error');
-                    }
-                });
-            }
-
-            // CORRECCIÓN: Asociar el evento al botón de la tienda
-            if (btnExchangeFromShop) {
-                btnExchangeFromShop.addEventListener('click', openExchangeModal);
-            }
-
-            if(btnCrafting) btnCrafting.addEventListener('click', openCraftingModal);
-            if(craftingModal) {
-                craftingModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(craftingModal));
-                document.getElementById('btnCombine').addEventListener('click', combineLiquids);
-                const slots = craftingModal.querySelectorAll('.crafting-slot');
-                slots.forEach(slot => {
-                    slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('over'); });
-                    slot.addEventListener('dragleave', () => slot.classList.remove('over'));
-                    slot.addEventListener('drop', handleDrop);
-                    slot.addEventListener('click', () => { // Clear slot on click
-                        delete slot.dataset.liquidId; slot.innerHTML = '';
-                    });
-                });
-            }
-            if(btnPrestige) btnPrestige.addEventListener('click', openPrestigeModal);
-            if(prestigeModal) {
-                prestigeModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(prestigeModal));
-                document.getElementById('btnConfirmPrestige').addEventListener('click', handlePrestige);
-                prestigeModal.querySelector('#prestigeUpgradesGrid').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('buy-prestige-btn')) buyPrestigeUpgrade(e.target.dataset.id);
-                });
-            }
-
-
-            
-            if(btnConfig) btnConfig.addEventListener('click', ()=> {
-              if(configModal) configModal.classList.remove('hidden');
-              chkSmoke.checked = state.settings.smokeEnabled;
-              chkClickNumbers.checked = state.settings.clickNumbersEnabled;
-              musicVolumeSlider.value = state.settings.musicVolume;
-              sfxVolumeSlider.value = state.settings.sfxVolume;
-            });
-
-            
-            if(btnConfig) btnConfig.addEventListener('click', ()=> {
-              if(configModal) configModal.classList.remove('hidden');
-              chkSmoke.checked = state.settings.smokeEnabled;
-              chkClickNumbers.checked = state.settings.clickNumbersEnabled;
-              musicVolumeSlider.value = state.settings.musicVolume;
-              sfxVolumeSlider.value = state.settings.sfxVolume;
-            });
-
-            if(configModal) {
-              configModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(configModal));
-            }
-
-            if(langSelect) langSelect.addEventListener('change', (e) => {
-                state.lang = e.target.value;
-                translateUI();
-                render(); // Re-render dynamic parts like cooldowns
-            });
-
-            if(chkSmoke) chkSmoke.addEventListener('change', (e) => {
-                state.settings.smokeEnabled = e.target.checked;
-            });
-
-            if(chkClickNumbers) chkClickNumbers.addEventListener('change', (e) => {
-                state.settings.clickNumbersEnabled = e.target.checked;
-            });
-
-            if(musicVolumeSlider) musicVolumeSlider.addEventListener('input', (e) => {
-                state.settings.musicVolume = parseFloat(e.target.value);
-                if(bgMusic) bgMusic.volume = state.settings.musicVolume;
-            });
-
-            if(sfxVolumeSlider) sfxVolumeSlider.addEventListener('input', (e) => {
-                state.settings.sfxVolume = parseFloat(e.target.value);
-            });
-
-            if(btnManualSave) btnManualSave.addEventListener('click', () => {
-                saveState();
-                showToast('¡Progreso guardado!', 'success');
-            });
-
-            if(btnRepeatTutorial) btnRepeatTutorial.addEventListener('click', () => {
-                if (!confirm("¿Seguro que quieres reiniciar el tutorial?")) return;
-                state.tutorialCompleted = false; 
-                state.tutorialStep = 0;
-                closeAndAnimate(configModal);
-                showToast('El tutorial se mostrará de nuevo al recargar la página.', 'info');
-                saveState();
-            });
-
-            if(btnReset) btnReset.addEventListener('click', ()=>{
-              if(confirm('⚠️ Esto borrará absolutamente TODO el progreso guardado en este juego.')){
-                localStorage.clear();
-                state = {};
-                location.reload(true);
-              }
-            });
-
-            if(btnMata) btnMata.addEventListener('click', ()=>{
-              const now = Date.now();
-              if(state.mataCooldownUntil && state.mataCooldownUntil > now) return;
-              state.sig += CONFIG.mataReward;
-              state.totalSigEarned += CONFIG.mataReward;
-              state.mataUses = (state.mataUses || 0) + 1;
-              state.mataCooldownUntil = now + CONFIG.mataCooldownSec*1000;
-              checkAchievements();
-              render();
-            });
-
-            if(btnDaily) btnDaily.addEventListener('click', openDailyModal);
-            if(closeDaily) closeDaily.addEventListener('click', () => dailyModal.classList.add('hidden'));
-            if(btnClaimDaily) btnClaimDaily.addEventListener('click', claimDailyReward);
-
-            if(btnAFK) btnAFK.addEventListener('click', openAfkModal);
-            if(afkModal) afkModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(afkModal));
-            if(btnClaimAFK) btnClaimAFK.addEventListener('click', claimAfkEarnings);
-            if(btnUpgradeAFK) btnUpgradeAFK.addEventListener('click', upgradeAfk);
-            afkModal.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => afkModal.classList.add('hidden')));
-
-            if(btnWheel) {
-                btnWheel.addEventListener('click', () => {
-                    wheelModal.classList.remove('hidden');
-                });
-            }
-
-            if(wheelModal) {
-                wheelModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(wheelModal));
-            }
-
-            if(btnSpinWheel) {
-                btnSpinWheel.addEventListener('click', spinWheel);
-            }
-
-            if(btnMissions) {
-                btnMissions.addEventListener('click', () => {
-                    renderMissions();
-                    missionsModal.classList.remove('hidden');
-                });
-            }
-
-            if(missionsModal) {
-                missionsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(missionsModal));
-            }
-
-            if(btnAchievements) {
-                btnAchievements.addEventListener('click', () => {
-                    renderAchievements();
-                    achievementsModal.classList.remove('hidden');
-                    dotAchievements.classList.add('hidden');
-                });
-            }
-
-            if(achievementsModal) {
-                achievementsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(achievementsModal));
-            }
-
-            if(btnChests) {
-                btnChests.addEventListener('click', openChestsModal);
-            }
-            if(chestsModal) chestsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(chestsModal));
-
-            if (btnPets) {
-                btnPets.addEventListener('click', openPetsModal);
-            }
-            // Cargar sonidos
-            bgMusic = document.getElementById('bgMusic');
-            clickSfx = document.getElementById('clickSfx');
-            buySfx = document.getElementById('buySfx');
-            successSfx = document.getElementById('successSfx');
-            errorSfx = document.getElementById('errorSfx');
-            if (petsModal) {
-                petsModal.querySelector('.close-btn').addEventListener('click', () => closeAndAnimate(petsModal));
-                petsModal.querySelector('#petsGrid').addEventListener('click', handlePetAction);
-            }
-
-
-
-
-
-            if (shopGrid) {
-                shopGrid.addEventListener('click', (e) => {
-                    const card = e.target.closest('.shopCard');
-                    if (!card) return;
-
-                    const itemIndex = card.dataset.index; // For fosos
-                    const gemFosoIndex = card.dataset.gemFosoIndex; // For gem fosos
-                    const flavorId = card.dataset.flavorId; // For flavors
-
-                    if (itemIndex !== undefined) {
-                        const index = parseInt(itemIndex, 10);
-                        const item = FOSOS[index];                        
-                        const currentCost = Math.round(item.cost * (state.market.priceMultipliers[index] || 1));
-
-                        if (state.fososOwned.includes(index)) {
-                            state.activeFosoIndex = index;
-                            showToast(`Foso ${item.name} equipado.`, 'info');
-                            // Al equipar un foso nuevo, se "arregla" si el anterior estaba quemado
-                            if (state.burned) {
-                                state.burned = false;
-                                showToast('Foso nuevo equipado, ¡listo para usar!', 'success');
-                            }
-                        } else {
-                            if (state.sig >= currentCost) {
-                                state.sig -= currentCost;
-                                state.fososOwned.push(index);
-                                state.activeFosoIndex = index;
-                                showToast(`Foso ${item.name} comprado y equipado!`, 'success');
-                                // playSound('buySfx'); // Sonido de compra
-                                updateMissionProgress('buy_foso', 1);                                
-                                handleTutorialAction(5);
-                                saveState();
-                                checkAchievements();
-                            } else {
-                                showToast('No tienes suficientes Sigmacoins.', 'error');
-                            }
-                        }
-                    } else if (gemFosoIndex !== undefined) {
-                        const index = parseInt(gemFosoIndex, 10);
-                        const item = GEM_FOSOS[index];
-                        if (!state.gemFososOwned.includes(index)) {
-                            if (state.gems >= item.cost) {
-                                state.gems -= item.cost;
-                                state.gemFososOwned.push(index);
-                                showToast(`¡Foso de Gema comprado! Bonus de ganancias +5%`, 'success');
-                                saveState();
-                                playSound('buySfx');
-                            } else {
-                                showToast('No tienes suficientes gemas.', 'error');
-                            }
-                        }
-                    } else if (flavorId) {
-                        buyShopFlavor(flavorId);
-                    }
-                    render();
-                });
-            }
-
-            if (upgradesGrid) {
-                upgradesGrid.addEventListener('click', (e) => {
-                    const button = e.target.closest('button[data-upgrade]');
-                    if (!button) return;
-
-                    const upgradeType = button.dataset.upgrade;                    
-                    const allUpgrades = { 
-                        autoclicker: AUTOCLICKER_UPGRADES, 
-                        battery: BATTERY_UPGRADES, 
-                        critical: CRITICAL_UPGRADES, 
-                        efficiency: EFFICIENCY_UPGRADES, 
-                        combo: COMBO_UPGRADES, 
-                        liquid_luck: LIQUID_LUCK_UPGRADES,
-                        autorecharge: AUTORECHARGE_UPGRADES,
-                        passive_recharge: PASSIVE_RECHARGE_UPGRADES
-                    };
-                    const upgrades = allUpgrades[upgradeType];
-                    if (!upgrades) return; // Si la mejora no existe, salir
-
-                    const level = state.upgradeLevels[upgradeType] || 0;
-
-                    if (level < upgrades.length) {
-                        const nextUpgrade = upgrades[level];
-                        if (state.sig >= nextUpgrade.cost) {
-                            state.sig -= nextUpgrade.cost;
-                            state.upgradeLevels[upgradeType]++;
-
-                            // Aplicar efectos inmediatos
-                            if (upgradeType === 'battery') state.maxBattery = nextUpgrade.capacity; // CORREGIDO: nextUpgrade estaba fuera de alcance
-                            if (upgradeType === 'autoclicker') updateAutoClickLoop();
-                            if (upgradeType === 'passive_recharge') updatePassiveRechargeLoop();
-
-                            playSound('buySfx');
-                            saveState();
-                            showToast(`¡Mejora de ${upgradeType} comprada!`, 'success');
-                            renderUpgrades();
-                        }
-                    }
-                });
-            }
-
-        });
-
-        function handlePetAction(e) {
-            const button = e.target.closest('.pet-action-btn');
-            if (!button) return;
-
-            const card = button.closest('.shopCard');
-            const petId = card.dataset.petId;
-            const pet = PETS[petId];
-            const action = button.dataset.action;
-
-            if (action === 'buy') {
-                if (state.gems >= pet.cost) {
-                    state.gems -= pet.cost;
-                    state.unlockedPets.push(petId);
-                    playSound('buySfx');
-                    showToast(`¡Has adoptado a ${pet.name}!`, 'success');
-                    saveState();
-                    renderPets();
-                } else {
-                    showToast('No tienes suficientes gemas.', 'error');
-                }
-            } else if (action === 'equip') {
-                state.equippedPet = petId;
-                playSound('successSfx');
-                saveState();
-                renderPets();
-            }
-        }
-    })();
-</script>
 
 <!-- Elementos de Audio -->
 <audio id="bgMusic" loop src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAAAAACQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEA//tA0BMAAAAAAABEluZm8AAAAPAAAABAAAASAAAAAAAAAAAAAAAAAAAAAAQU1BVE9SQUxTVE9SRQAA//tA1BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA2BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA3BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA4BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA5BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA6BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA7BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA8BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA9BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA+BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tA/BMAAAAAAAABAAAAAQU1BVE9SQUxTVE9SRQAA//tBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-"></audio>
