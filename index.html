@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Foso Tycoon — Juego</title>
+<title>Foso Cliker - Sigma Company</title>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JLHC8HP0RE"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -4059,15 +4059,17 @@
         }, {
             id: 99, name: 'Foso Ali ❄️', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #ecf0f1 0%, #bdc3c7 100%)', perClick: 1.5e11, exclusive: true
         }, {
+            id: 100, name: 'Foso David Calls 📱', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #3498db 0%, #2980b9 100%)', perClick: 1.5e11, exclusive: true
+        }, {
             id: 101, name: 'Foso Esteva ⚡', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #f1c40f 0%, #f39c12 100%)', perClick: 1.5e11, exclusive: true
         }, {
             id: 102, name: 'Foso Calfa 💸', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #27ae60 0%, #2ecc71 100%)', perClick: 1.5e11, exclusive: true
         }, {
-            id: 103, name: 'Foso Discord 💬', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #5865F2 0%, #4e5bf0 100%)', perClick: 1.5e11, exclusive: true
+            id: 103, name: 'Foso Discord 💬', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #5865F2 0%, #4e5bf0 100%)', perClick: 10000, exclusive: true
         }
     ];
     // CORREGIDO: El foso 100 se movió aquí para evitar conflicto de ID
-    FOSOS.push({ id: 100, name: 'Foso David Calls 📱', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #3498db 0%, #2980b9 100%)', perClick: 1.5e11, exclusive: true });
+    // FOSOS.push({ id: 100, name: 'Foso David Calls 📱', cost: Infinity, background: 'radial-gradient(ellipse at bottom, #3498db 0%, #2980b9 100%)', perClick: 1.5e11, exclusive: true });
 
         const GEM_FOSOS = Array.from({ length: 30 }, (_, i) => ({
             id: i + 1,
@@ -5107,20 +5109,35 @@
             }
 
             // Update shop items
-            shopGrid.querySelectorAll('.shopCard[data-index]').forEach(card => {
+            shopModal.querySelectorAll('.shopCard[data-index]').forEach(card => {
                 const index = parseInt(card.dataset.index, 10);
+                const item = FOSOS[index];
+                if (!item) return;
+
                 const priceTag = card.querySelector('.priceTag');
-                const baseCost = FOSOS[index].cost;
-                const currentCost = Math.round(baseCost * (state.market.priceMultipliers[index] || 1));
+                if (!priceTag) return;
+                
+                const lang = state.lang || 'es';
 
                 if (state.fososOwned.includes(index)) {
                     card.classList.add('owned');
-                    if (priceTag) priceTag.textContent = LANGUAGES[lang]['owned'];
+                    priceTag.textContent = LANGUAGES[lang]['owned'];
                     if (state.fosoConditions[index] === undefined) state.fosoConditions[index] = 100;
                     priceTag.style.color = '';
+                    priceTag.style.background = '';
                 } else {
                     card.classList.remove('owned');
-                    if (priceTag) {
+                    priceTag.style.background = '';
+                    if (item.exclusive) {
+                        if (priceTag.dataset.cost === 'Infinity') {
+                            priceTag.textContent = 'Ruleta';
+                        } else {
+                            priceTag.textContent = `${formatNum(parseInt(priceTag.dataset.cost, 10))} 👑`;
+                        }
+                        priceTag.style.color = '';
+                    } else {
+                        const baseCost = item.cost;
+                        const currentCost = Math.round(baseCost * (state.market.priceMultipliers[index] || 1));
                         priceTag.textContent = `${formatNum(currentCost)} ΣC`;
                         priceTag.style.color = currentCost < baseCost ? '#2ecc71' : (currentCost > baseCost ? '#e74c3c' : '');
                     }
@@ -6596,7 +6613,7 @@
                         state.sig += 200000;
                         state.gems += 100;
                         state.exclusiveMoney += 200;
-                        if (!state.fososOwned.includes(103)) state.fososOwned.push(103);
+                        if (!state.fososOwned.includes(102)) state.fososOwned.push(102);
                         showToast('¡Recompensas del código DISCORD recibidas!', 'success');
                     } else if (exclusiveFosoCodes[code]) { // CORREGIDO: Usar el índice del foso en lugar del ID.
                         const fosoId = exclusiveFosoCodes[code];
@@ -6875,8 +6892,8 @@
 
 
 
-            if (shopGrid) {
-                shopGrid.addEventListener('click', (e) => {
+            if (shopModal) {
+                shopModal.addEventListener('click', (e) => {
                     const card = e.target.closest('.shopCard');
                     if (!card) return;
 
@@ -6886,28 +6903,42 @@
 
                     if (itemIndex !== undefined) {
                         const index = parseInt(itemIndex, 10);
-                        const item = FOSOS[index];                        
-                        const currentCost = Math.round(item.cost * (state.market.priceMultipliers[index] || 1));
+                        const item = FOSOS[index];
+                        if (!item) return;
 
                         if (state.fososOwned.includes(index)) {
                             state.activeFosoIndex = index;
                             showToast(`Foso ${item.name} equipado.`, 'info');
-                            // Al equipar un foso nuevo, se "arregla" si el anterior estaba quemado
                             if (state.burned) {
                                 state.burned = false;
                                 showToast('Foso nuevo equipado, ¡listo para usar!', 'success');
                             }
                         } else {
-                            if (state.sig >= currentCost) {
-                                state.sig -= currentCost;
-                                state.fososOwned.push(index);
-                                state.activeFosoIndex = index;
-                                showToast(`Foso ${item.name} comprado y equipado!`, 'success');
-                                playSound('buySfx');
-                                updateMissionProgress('buy_foso', 1);
-                                checkAchievements();
+                            if (item.exclusive) {
+                                const cost = parseInt(card.querySelector('.priceTag').dataset.cost, 10);
+                                if (state.exclusiveMoney >= cost) {
+                                    state.exclusiveMoney -= cost;
+                                    state.fososOwned.push(index);
+                                    state.activeFosoIndex = index;
+                                    showToast(`Foso ${item.name} comprado y equipado!`, 'success');
+                                    playSound('buySfx');
+                                    checkAchievements();
+                                } else {
+                                    showToast('No tienes suficientes 👑.', 'error');
+                                }
                             } else {
-                                showToast('No tienes suficientes Sigmacoins.', 'error');
+                                const currentCost = Math.round(item.cost * (state.market.priceMultipliers[index] || 1));
+                                if (state.sig >= currentCost) {
+                                    state.sig -= currentCost;
+                                    state.fososOwned.push(index);
+                                    state.activeFosoIndex = index;
+                                    showToast(`Foso ${item.name} comprado y equipado!`, 'success');
+                                    playSound('buySfx');
+                                    updateMissionProgress('buy_foso', 1);
+                                    checkAchievements();
+                                } else {
+                                    showToast('No tienes suficientes Sigmacoins.', 'error');
+                                }
                             }
                         }
                     } else if (gemFosoIndex !== undefined) {
@@ -6915,17 +6946,6 @@
                         const item = GEM_FOSOS[index];
                         if (!state.gemFososOwned.includes(index)) {
                             if (state.gems >= item.cost) {
-                                if (item.exclusiveCurrency && state[item.exclusiveCurrency] >= item.exclusiveCost) {
-                                    state[item.exclusiveCurrency] -= item.exclusiveCost;
-                                    state.fososOwned.push(index);
-                                    state.activeFosoIndex = index;
-                                    showToast(`Foso ${item.name} comprado y equipado!`, 'success');
-                                    playSound('buySfx');
-                                } else if (item.exclusiveCurrency) {
-                                    showToast(`No tienes suficiente Moneda Exclusiva.`, 'error');
-                                }
-                            } else if (state.sig >= currentCost) {
-                                // ... (código existente para compra con Sigmacoins)
                                 state.gems -= item.cost;
                                 state.gemFososOwned.push(index);
                                 showToast(`¡Foso de Gema comprado! Bonus de ganancias +5%`, 'success');
